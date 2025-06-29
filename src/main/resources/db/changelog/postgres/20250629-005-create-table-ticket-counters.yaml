@@ -1,0 +1,30 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20250629-04-create-ticket-counters
+      author: beibit
+      changes:
+        - createTable:
+            tableName: ticket_counters
+            columns:
+              - column:
+                  name: department_id
+                  type: BIGINT
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: current_ticket_number
+                  type: INT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_time
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+        - addForeignKeyConstraint:
+            baseTableName: ticket_counters
+            baseColumnNames: department_id
+            referencedTableName: departments
+            referencedColumnNames: id
+            constraintName: fk_ticket_counters_department

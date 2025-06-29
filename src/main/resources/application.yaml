@@ -1,0 +1,20 @@
+spring:
+  profiles:
+    active: prod
+  application:
+    name: dulaty-queue
+  liquibase:
+    database-change-log-lock-table: dulaty_queue_sys_db_change_log_lock
+    database-change-log-table: dulaty_queue_sys_db_change_log
+    default-schema: public
+  jpa:
+    hibernate:
+      ddl-auto: validate
+springdoc:
+  swagger-ui:
+    docExpansion: none
+dulaty:
+  queue:
+    jwt:
+      secret: 9586f460d415c152be0435180a3aeef07b6af2e155373d9f1d5c8a76abde1c38
+      expiration: 43200000

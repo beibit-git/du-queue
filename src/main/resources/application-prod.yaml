@@ -1,0 +1,5 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/dulaty_academy_db
+    username: postgres
+    password: nB7_lLAN5dQGFIS1xGFy

@@ -1,0 +1,63 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20250629-03-create-tickets
+      author: beibit
+      changes:
+        - createTable:
+            tableName: tickets
+            columns:
+              - column:
+                  name: phone_number
+                  type: VARCHAR(15)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: ticket_number
+                  type: VARCHAR(64)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: ticket_status
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: department_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: manager_id
+                  type: BIGINT
+                  constraints:
+                    nullable: true
+              - column:
+                  name: tracking_token
+                  type: VARCHAR(64)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: sms_sent
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_date
+                  type: TIMESTAMP
+              - column:
+                  name: last_modified_date
+                  type: TIMESTAMP
+        - addForeignKeyConstraint:
+            baseTableName: tickets
+            baseColumnNames: department_id
+            referencedTableName: departments
+            referencedColumnNames: id
+            constraintName: fk_tickets_department
+        - addForeignKeyConstraint:
+            baseTableName: tickets
+            baseColumnNames: manager_id
+            referencedTableName: managers
+            referencedColumnNames: id
+            constraintName: fk_tickets_manager
