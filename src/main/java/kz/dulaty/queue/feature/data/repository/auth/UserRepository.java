@@ -1,4 +1,4 @@
-package kz.dulaty.queue.feature.data.repository;
+package kz.dulaty.queue.feature.data.repository.auth;
 import kz.dulaty.queue.feature.data.entity.auth.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;

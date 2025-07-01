@@ -16,6 +16,8 @@ import lombok.experimental.FieldNameConstants;
 @Table(name = "tickets")
 public class Ticket extends BaseEntity {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
     private String phoneNumber;
     private String ticketNumber;
     @Enumerated(EnumType.STRING)

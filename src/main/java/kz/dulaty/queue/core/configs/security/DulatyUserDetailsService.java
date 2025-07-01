@@ -1,7 +1,7 @@
 package kz.dulaty.queue.core.configs.security;
 
 import kz.dulaty.queue.feature.data.entity.auth.User;
-import kz.dulaty.queue.feature.data.repository.UserRepository;
+import kz.dulaty.queue.feature.data.repository.auth.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;

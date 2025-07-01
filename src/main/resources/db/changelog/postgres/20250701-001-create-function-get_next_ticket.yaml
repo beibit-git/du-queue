@@ -1,0 +1,44 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20250701-01-create-get-next-ticket-function
+      author: beibit
+      changes:
+        - createProcedure:
+            dbms: postgresql
+            procedureBody: |
+              CREATE OR REPLACE FUNCTION get_next_ticket(dept_id INT)
+              RETURNS VARCHAR AS $$
+              DECLARE
+                  dept_prefix TEXT;
+                  next_number INT;
+                  ticket_number VARCHAR;
+              BEGIN
+                  -- Получить префикс из таблицы departments
+                  SELECT d.prefix INTO dept_prefix
+                  FROM departments d
+                  WHERE d.id = dept_id;
+
+                  -- Обновить счётчик
+                  UPDATE ticket_counters
+                  SET current_ticket_number = current_ticket_number + 1,
+                  updated_time = now()
+                  WHERE department_id = dept_id
+                  RETURNING current_ticket_number INTO next_number;
+
+                  -- Если записи нет — вставить новую
+                  IF NOT FOUND THEN
+                    INSERT INTO ticket_counters(department_id, current_ticket_number, updated_time)
+                    VALUES (dept_id, 1, now())
+                    RETURNING current_ticket_number INTO next_number;
+                  END IF;
+
+                  -- Формируем номер
+                  ticket_number := dept_prefix || 
+                      CASE
+                          WHEN next_number < 1000 THEN LPAD(next_number::TEXT, 3, '0')
+                          ELSE next_number::TEXT
+                      END;
+
+                  RETURN ticket_number;
+              END;
+              $$ LANGUAGE plpgsql;

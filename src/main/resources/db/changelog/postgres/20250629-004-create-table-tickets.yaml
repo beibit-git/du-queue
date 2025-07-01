@@ -7,11 +7,15 @@ databaseChangeLog:
             tableName: tickets
             columns:
               - column:
-                  name: phone_number
-                  type: VARCHAR(15)
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
                   constraints:
                     primaryKey: true
                     nullable: false
+              - column:
+                  name: phone_number
+                  type: VARCHAR(15)
               - column:
                   name: ticket_number
                   type: VARCHAR(64)
