@@ -57,6 +57,7 @@ public class SecurityConfiguration {
             "/api/v1/course/**",
             "/api/v1/document/**",
             "/api/v1/test/**",
+            "/api/queue/ticket/generate",
     };
 
     @PostConstruct

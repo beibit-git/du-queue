@@ -20,9 +20,9 @@ import org.springframework.web.bind.annotation.RestController;
 public class TicketController {
     private final TicketService ticketService;
 
-     @PostMapping("/generate")
-     public ResponseEntity<TicketDto> generateTicket(@RequestBody TicketRequestDto request) {
-         TicketDto ticket = ticketService.generateTicket(request);
-         return ResponseEntity.ok(ticket);
-     }
+    @PostMapping("/generate")
+    public ResponseEntity<TicketDto> generateTicket(@RequestBody TicketRequestDto request) {
+        TicketDto ticket = ticketService.generateTicket(request);
+        return ResponseEntity.ok(ticket);
+    }
 }
