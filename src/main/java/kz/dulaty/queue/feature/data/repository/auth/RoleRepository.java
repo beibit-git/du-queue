@@ -1,7 +1,7 @@
 package kz.dulaty.queue.feature.data.repository.auth;
 
-import kz.dulaty.queue.feature.data.entity.auth.Role;
-import kz.dulaty.queue.feature.data.enums.SafetyRole;
+import kz.dulaty.queue.feature.auth.data.entity.Role;
+import kz.dulaty.queue.feature.auth.data.enums.SafetyRole;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

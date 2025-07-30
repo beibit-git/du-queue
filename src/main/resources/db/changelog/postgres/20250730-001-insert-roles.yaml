@@ -1,0 +1,29 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20250730-001-insert-roles
+      author: beibit
+      changes:
+        - insert:
+            tableName: roles
+            columns:
+              - column:
+                  name: safety_role
+                  value: ADMIN
+        - insert:
+            tableName: roles
+            columns:
+              - column:
+                  name: safety_role
+                  value: MODERATOR
+        - insert:
+            tableName: roles
+            columns:
+              - column:
+                  name: safety_role
+                  value: MANAGER
+        - insert:
+            tableName: roles
+            columns:
+              - column:
+                  name: safety_role
+                  value: GUEST

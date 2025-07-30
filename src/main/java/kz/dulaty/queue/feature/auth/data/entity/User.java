@@ -1,4 +1,4 @@
-package kz.dulaty.queue.feature.data.entity.auth;
+package kz.dulaty.queue.feature.auth.data.entity;
 
 import jakarta.persistence.*;
 import lombok.*;

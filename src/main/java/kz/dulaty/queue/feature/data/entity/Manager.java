@@ -1,8 +1,8 @@
 package kz.dulaty.queue.feature.data.entity;
 
 import jakarta.persistence.*;
-import kz.dulaty.queue.feature.data.entity.auth.BaseEntity;
-import kz.dulaty.queue.feature.data.entity.auth.User;
+import kz.dulaty.queue.feature.auth.data.entity.BaseEntity;
+import kz.dulaty.queue.feature.auth.data.entity.User;
 import lombok.*;
 import lombok.experimental.FieldNameConstants;
 

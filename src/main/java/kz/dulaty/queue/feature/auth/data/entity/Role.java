@@ -1,7 +1,7 @@
-package kz.dulaty.queue.feature.data.entity.auth;
+package kz.dulaty.queue.feature.auth.data.entity;
 
 import jakarta.persistence.*;
-import kz.dulaty.queue.feature.data.enums.SafetyRole;
+import kz.dulaty.queue.feature.auth.data.enums.SafetyRole;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.security.core.GrantedAuthority;

@@ -1,4 +1,4 @@
-package kz.dulaty.queue.feature.data.enums;
+package kz.dulaty.queue.feature.auth.data.enums;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 @Getter
 public enum SafetyRole {
     ADMIN,
-    CHIEF_MANAGER,
-    MANAGER
+    MODERATOR,
+    MANAGER,
+    GUEST
 }

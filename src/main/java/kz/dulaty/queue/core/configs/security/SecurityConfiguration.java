@@ -1,6 +1,8 @@
 package kz.dulaty.queue.core.configs.security;
 
 import jakarta.annotation.PostConstruct;
+import kz.dulaty.queue.feature.auth.config.BearerAuthEntryPoint;
+import kz.dulaty.queue.feature.auth.config.UserDetailsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
@@ -32,7 +34,7 @@ import java.util.Arrays;
 @EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfiguration {
-    private final DulatyUserDetailsService userDetailsService;
+    private final UserDetailsService userDetailsService;
     private final BearerAuthEntryPoint authEntryPoint;
     public static final String ALLOW_ALL_MATCHER = "/**";
     private final String[] INSECURE_ENDPOINTS = new String[]{

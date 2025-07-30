@@ -1,4 +1,4 @@
-package kz.dulaty.queue.core.configs.security;
+package kz.dulaty.queue.feature.auth.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;

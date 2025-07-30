@@ -10,6 +10,21 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate
+  mail:
+    host: mail.dulaty.kz
+    port: 587
+    username: ${SMTP_USERNAME}
+    password: ${SMTP_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+  freemarker:
+    template-loader-path: classpath:/mail-templates/
+    charset: UTF-8
+    cache: false
 springdoc:
   swagger-ui:
     docExpansion: none
@@ -18,3 +33,7 @@ dulaty:
     jwt:
       secret: 9586f460d415c152be0435180a3aeef07b6af2e155373d9f1d5c8a76abde1c38
       expiration: 43200000
+  mail-properties:
+    domain: http://localhost:8080
+    email-confirmation-link-pattern: http://localhost:8080/api/v1/auth/confirm-email?token=%s
+    reset-password-link-pattern: http://localhost:8080/api/v1/auth/reset-password/%s

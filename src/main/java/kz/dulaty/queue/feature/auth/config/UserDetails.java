@@ -1,17 +1,16 @@
-package kz.dulaty.queue.core.configs.security;
+package kz.dulaty.queue.feature.auth.config;
 
-import kz.dulaty.queue.feature.data.entity.auth.Role;
-import kz.dulaty.queue.feature.data.entity.auth.User;
-import kz.dulaty.queue.feature.data.enums.SafetyRole;
+import kz.dulaty.queue.feature.auth.data.enums.SafetyRole;
+import kz.dulaty.queue.feature.auth.data.entity.Role;
+import kz.dulaty.queue.feature.auth.data.entity.User;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 
-public record DulatyUserDetails(User user) implements UserDetails {
+public record UserDetails(User user) implements org.springframework.security.core.userdetails.UserDetails {
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return user.getRoles();
@@ -33,7 +32,7 @@ public record DulatyUserDetails(User user) implements UserDetails {
 
     @Override
     public boolean isAccountNonExpired() {
-        return UserDetails.super.isAccountNonExpired();
+        return org.springframework.security.core.userdetails.UserDetails.super.isAccountNonExpired();
     }
 
     @Override
@@ -43,7 +42,7 @@ public record DulatyUserDetails(User user) implements UserDetails {
 
     @Override
     public boolean isCredentialsNonExpired() {
-        return UserDetails.super.isCredentialsNonExpired();
+        return org.springframework.security.core.userdetails.UserDetails.super.isCredentialsNonExpired();
     }
 
     @Override
