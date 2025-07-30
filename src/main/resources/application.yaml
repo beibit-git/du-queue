@@ -29,6 +29,8 @@ springdoc:
   swagger-ui:
     docExpansion: none
 dulaty:
+  scheduling:
+    ticket-cleaner: "0 0 0 * * *" # Удаление номера тикетов каждый день в полночь
   queue:
     jwt:
       secret: 9586f460d415c152be0435180a3aeef07b6af2e155373d9f1d5c8a76abde1c38
