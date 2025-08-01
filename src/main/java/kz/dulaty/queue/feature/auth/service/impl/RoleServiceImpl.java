@@ -3,7 +3,7 @@ package kz.dulaty.queue.feature.auth.service.impl;
 import kz.dulaty.queue.feature.auth.data.entity.Role;
 import kz.dulaty.queue.feature.auth.data.enums.SafetyRole;
 import kz.dulaty.queue.feature.auth.service.RoleService;
-import kz.dulaty.queue.feature.data.repository.auth.RoleRepository;
+import kz.dulaty.queue.feature.auth.data.repository.RoleRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

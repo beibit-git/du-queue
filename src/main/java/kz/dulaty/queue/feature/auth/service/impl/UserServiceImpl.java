@@ -21,7 +21,7 @@ import kz.dulaty.queue.feature.auth.service.ConfirmationTokenService;
 import kz.dulaty.queue.feature.auth.service.EmailService;
 import kz.dulaty.queue.feature.auth.service.RoleService;
 import kz.dulaty.queue.feature.auth.service.UserService;
-import kz.dulaty.queue.feature.data.repository.auth.UserRepository;
+import kz.dulaty.queue.feature.auth.data.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -31,7 +31,6 @@ import org.springframework.security.core.context.SecurityContextHolderStrategy;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.Collections;

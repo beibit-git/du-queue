@@ -44,22 +44,13 @@ public class SecurityConfiguration {
             "/api/v1/auth/confirm-email",
             "/api/v1/auth/forgot-password/**",
             "/api/v1/auth/reset-password/**",
-            "/api/v1/file/download/**",
-            "/api/v1/course-modules/course/**",
             "/swagger/**",
             "/v3/api-docs/**",
             "/swagger-ui.html",
             "/swagger-ui/**",
-            "/api/v1/dictionary/direction/**",
-            "/api/v1/dictionary/format/**",
-            "/api/v1/dictionary/language/**",
-            "/api/v1/dictionary/nationality/**",
-            "/api/v1/dictionary/status/**",
-            "/api/v1/course/all",
-            "/api/v1/course/**",
-            "/api/v1/document/**",
-            "/api/v1/test/**",
-            "/api/queue/ticket/generate",
+            "/api/v1/queue/ticket/generate",
+            "/api/v1/queue/department",
+            "/api/v1/queue/department/*"
     };
 
     @PostConstruct
