@@ -39,7 +39,7 @@ public class UserController {
     }
 
     @GetMapping("/user-info")
-    @PreAuthorize("hasAnyAuthority('STUDENT', 'ROLE_APPLICATION_ADMIN', 'MODERATOR')")
+    @PreAuthorize("hasAnyAuthority('GUEST', 'ADMIN', 'MODERATOR', 'MANAGER')")
     public UserInfoDto userProfile(Principal principal) throws NotFoundException {
         return service.getUserInfo(principal.getName());
     }
