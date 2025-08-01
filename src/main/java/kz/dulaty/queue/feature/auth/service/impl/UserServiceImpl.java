@@ -66,7 +66,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public void signUp(SignUpRequest requestDto, MultipartFile file) throws UserAlreadyExistsException {
+    public void signUp(SignUpRequest requestDto) throws UserAlreadyExistsException {
 
         checkIfUserExistsByPhoneNumber(requestDto.phoneNumber());
         checkIfUserExistsByEmail(requestDto.email());
@@ -79,7 +79,7 @@ public class UserServiceImpl implements UserService {
 
         user.setActive(true);
 
-        sendVerificationToken(user);
+        //sendVerificationToken(user);
         log.info("User {} registered", requestDto.email());
     }
 

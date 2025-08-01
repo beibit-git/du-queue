@@ -20,7 +20,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.security.Principal;
 
@@ -35,8 +34,8 @@ public class UserController {
     @PostMapping("/sign-up")
     @Operation(summary = "Регистрация нового пользователя")
     @ResponseStatus(HttpStatus.CREATED)
-    public void addNewUser(@RequestPart(name = "data") @Valid SignUpRequest request, @RequestPart(name = "avatar", required = false) MultipartFile file) throws NotFoundException, UserAlreadyExistsException, UserAlreadyExistsException {
-        service.signUp(request, file);
+    public void addNewUser(@RequestBody @Valid SignUpRequest request) throws NotFoundException, UserAlreadyExistsException {
+        service.signUp(request);
     }
 
     @GetMapping("/user-info")
