@@ -14,10 +14,11 @@ public class TicketCleanScheduler {
     private final SchedulingProperties schedulingProperties;
     private final TicketRepository ticketRepository;
     @Scheduled(cron = "#{@schedulingProperties.ticketCleaner}")
-    @SchedulerLock(name = "cleanTickets")
+    @SchedulerLock(name = "cleanTickets", lockAtLeastFor = "PT30s", lockAtMostFor = "PT60s")
     public void cleanTickets() {
         log.info("Cleaning ticket counters");
         ticketRepository.cleanCounters();
+        ticketRepository.deleteAll();
         log.info("Ticket counters cleaned successfully");
     }
 }
