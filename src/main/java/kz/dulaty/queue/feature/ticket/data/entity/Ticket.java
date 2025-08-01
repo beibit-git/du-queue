@@ -3,6 +3,7 @@ package kz.dulaty.queue.feature.ticket.data.entity;
 import jakarta.persistence.*;
 import kz.dulaty.queue.feature.auth.data.entity.BaseEntity;
 import kz.dulaty.queue.feature.department.data.entity.Department;
+import kz.dulaty.queue.feature.manager.data.entity.Manager;
 import kz.dulaty.queue.feature.ticket.data.enums.TicketStatus;
 import lombok.*;
 import lombok.experimental.FieldNameConstants;

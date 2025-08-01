@@ -14,6 +14,7 @@ import kz.dulaty.queue.feature.auth.data.dto.ResetPasswordRequest;
 import kz.dulaty.queue.feature.auth.data.dto.SignInRequestDto;
 import kz.dulaty.queue.feature.auth.data.dto.SignUpRequest;
 import kz.dulaty.queue.feature.auth.data.dto.UserInfoDto;
+import kz.dulaty.queue.feature.auth.data.enums.SafetyRole;
 import kz.dulaty.queue.feature.auth.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,7 +36,7 @@ public class UserController {
     @Operation(summary = "Регистрация нового пользователя")
     @ResponseStatus(HttpStatus.CREATED)
     public void addNewUser(@RequestBody @Valid SignUpRequest request) throws NotFoundException, UserAlreadyExistsException {
-        service.signUp(request);
+        service.signUp(request, SafetyRole.GUEST);
     }
 
     @GetMapping("/user-info")

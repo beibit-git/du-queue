@@ -1,0 +1,19 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20250801-001-alter-table-managers-add-column-is_active
+      author: beibit
+      preConditions:
+        - not:
+            columnExists:
+              tableName: managers
+              columnName: is_active
+      changes:
+        - addColumn:
+            tableName: managers
+            columns:
+              - column:
+                  name: is_active
+                  type: boolean
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: true

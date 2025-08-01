@@ -10,11 +10,13 @@ import kz.dulaty.queue.feature.auth.data.dto.ResetPasswordRequest;
 import kz.dulaty.queue.feature.auth.data.dto.SignInRequestDto;
 import kz.dulaty.queue.feature.auth.data.dto.SignUpRequest;
 import kz.dulaty.queue.feature.auth.data.dto.UserInfoDto;
+import kz.dulaty.queue.feature.auth.data.entity.User;
+import kz.dulaty.queue.feature.auth.data.enums.SafetyRole;
 
 public interface UserService {
     UserInfoDto signIn(SignInRequestDto requestDto, HttpServletRequest request, HttpServletResponse response) throws NotFoundException, CustomAuthenticationException;
 
-    void signUp(SignUpRequest requestDto) throws NotFoundException, UserAlreadyExistsException;
+    User signUp(SignUpRequest requestDto, SafetyRole role) throws NotFoundException, UserAlreadyExistsException;
 
     void confirmEmail(String token, HttpServletRequest request, HttpServletResponse response) throws AuthException;
 

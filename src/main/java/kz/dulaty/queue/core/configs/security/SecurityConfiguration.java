@@ -50,7 +50,9 @@ public class SecurityConfiguration {
             "/swagger-ui/**",
             "/api/v1/queue/ticket/generate",
             "/api/v1/queue/department",
-            "/api/v1/queue/department/*"
+            "/api/v1/queue/department/*",
+            "/api/v1/queue/manager",
+            "/api/v1/queue/manager/*"
     };
 
     @PostConstruct

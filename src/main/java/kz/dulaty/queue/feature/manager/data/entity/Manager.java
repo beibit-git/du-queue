@@ -1,4 +1,4 @@
-package kz.dulaty.queue.feature.ticket.data.entity;
+package kz.dulaty.queue.feature.manager.data.entity;
 
 import jakarta.persistence.*;
 import kz.dulaty.queue.feature.auth.data.entity.BaseEntity;
@@ -24,4 +24,5 @@ public class Manager extends BaseEntity {
     private Department department;
     @OneToOne
     private User user;
+    private Boolean isActive = true;
 }

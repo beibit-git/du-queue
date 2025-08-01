@@ -65,7 +65,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public void signUp(SignUpRequest requestDto) throws UserAlreadyExistsException {
+    public User signUp(SignUpRequest requestDto, SafetyRole role) throws UserAlreadyExistsException {
 
         checkIfUserExistsByPhoneNumber(requestDto.phoneNumber());
         checkIfUserExistsByEmail(requestDto.email());
@@ -73,13 +73,14 @@ public class UserServiceImpl implements UserService {
         User user = UserInfoMapper.USER_INFO_MAPPER.toEntity(requestDto);
 
         user.setPassword(encoder.encode(user.getPassword()));
-        user.setRoles(Collections.singleton(roleService.findByType(SafetyRole.GUEST)));
+        user.setRoles(Collections.singleton(roleService.findByType(role)));
         userRepository.save(user);
 
         user.setActive(true);
 
         //sendVerificationToken(user);
         log.info("User {} registered", requestDto.email());
+        return user;
     }
 
     @Override
