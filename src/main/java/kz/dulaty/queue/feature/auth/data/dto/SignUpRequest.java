@@ -15,9 +15,9 @@ public record SignUpRequest(
         String email,
         @NotBlank(message = "Пароль не может быть пустым")
         @Pattern(
-                regexp = "^(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$",
+                regexp = "^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d@$!%*?&]{8,}$",
                 flags = {Pattern.Flag.CASE_INSENSITIVE, Pattern.Flag.MULTILINE},
-                message = "Пароль должен содержать минимум 8 символов, включая заглавную букву, цифру и специальный символ."
+                message = "Пароль должен содержать минимум 8 символов, включая заглавную букву, цифру."
         )
         String password,
         @NotBlank(message = "Номер телефона не может быть пустым")
