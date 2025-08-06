@@ -1,5 +1,6 @@
 package kz.dulaty.queue.feature.department.presentation;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import kz.dulaty.queue.core.common.SimplePage;
 import kz.dulaty.queue.core.exception.NotFoundException;
@@ -17,6 +18,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @Slf4j
+@Tag(name = "Отделы")
 @RestController
 @RequestMapping("/api/v1/queue/department")
 @RequiredArgsConstructor

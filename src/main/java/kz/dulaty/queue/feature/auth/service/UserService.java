@@ -27,4 +27,5 @@ public interface UserService {
     UserInfoDto getUserInfo(String email) throws NotFoundException;
 
     void signOut(HttpServletRequest request, HttpServletResponse response);
+    User updateUserInfo(Long id, SignUpRequest requestDto) throws NotFoundException, UserAlreadyExistsException;
 }

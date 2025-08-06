@@ -8,7 +8,7 @@ import kz.dulaty.queue.feature.ticket.data.enums.TicketStatus;
 import kz.dulaty.queue.feature.ticket.data.mapper.TicketMapper;
 import kz.dulaty.queue.feature.department.data.repository.DepartmentRepository;
 import kz.dulaty.queue.feature.ticket.data.repository.TicketRepository;
-import kz.dulaty.queue.feature.ticket.service.TicketService;
+import kz.dulaty.queue.feature.ticket.service.TicketGenerationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -18,7 +18,7 @@ import java.util.UUID;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class TicketServiceImpl implements TicketService {
+public class TicketGenerationServiceImpl implements TicketGenerationService {
     private final TicketRepository ticketRepository;
     private final DepartmentRepository departmentRepository;
 

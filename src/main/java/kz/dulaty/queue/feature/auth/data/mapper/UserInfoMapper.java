@@ -5,10 +5,7 @@ import kz.dulaty.queue.feature.auth.data.dto.SignUpRequest;
 import kz.dulaty.queue.feature.auth.data.dto.UserInfoDto;
 import kz.dulaty.queue.feature.auth.data.entity.Role;
 import kz.dulaty.queue.feature.auth.data.entity.User;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.NullValueCheckStrategy;
-import org.mapstruct.NullValuePropertyMappingStrategy;
+import org.mapstruct.*;
 import org.mapstruct.factory.Mappers;
 
 import java.util.Set;
@@ -28,6 +25,16 @@ public interface UserInfoMapper {
     @Mapping(target = "passChangeDateTime", ignore = true)
     @Mapping(target = "roles", ignore = true)
     User toEntity(SignUpRequest signUpRequest);
+
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "active", ignore = true)
+    @Mapping(target = "locked", ignore = true)
+    @Mapping(target = "createdDate", ignore = true)
+    @Mapping(target = "lastLoginDateTime", ignore = true)
+    @Mapping(target = "passCount", ignore = true)
+    @Mapping(target = "passChangeDateTime", ignore = true)
+    @Mapping(target = "roles", ignore = true)
+    void updateEntity(@MappingTarget User user, SignUpRequest signUpRequest);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "active", expression = "java(Boolean.TRUE)")

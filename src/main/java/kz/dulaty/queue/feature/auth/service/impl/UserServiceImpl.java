@@ -149,6 +149,23 @@ public class UserServiceImpl implements UserService {
         }
     }
 
+    @Override
+    public User updateUserInfo(Long id, SignUpRequest requestDto) throws NotFoundException, UserAlreadyExistsException {
+        var user = userRepository.findById(id).orElseThrow(() -> new NotFoundException("User not found"));
+
+        checkIfUserExistsByPhoneNumber(requestDto.phoneNumber());
+        checkIfUserExistsByEmail(requestDto.email());
+
+        UserInfoMapper.USER_INFO_MAPPER.updateEntity(user, requestDto);
+
+        user.setPassword(encoder.encode(user.getPassword()));
+        userRepository.save(user);
+
+        log.info("User with ID {} has been updated", id);
+
+        return user;
+    }
+
     private void authenticate(UsernamePasswordAuthenticationToken token, HttpServletRequest request, HttpServletResponse response) {
         var authentication = authenticationManager.authenticate(token);
         var context = securityContextHolderStrategy.createEmptyContext();

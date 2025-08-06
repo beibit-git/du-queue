@@ -38,22 +38,51 @@ public class ManagerOperationServiceImpl implements ManagerOperationService {
     }
 
     @Override
-    public void deleteManager(Long managerId) {
-
+    public void deleteManager(Long managerId) throws NotFoundException {
+        Manager manager = managerRepository.findById(managerId)
+                .orElseThrow(() -> new NotFoundException("Manager not found"));
+        managerRepository.delete(manager);
+        log.info("Manager with ID {} has been deleted", managerId);
     }
 
     @Override
-    public void updateManager(Long managerId, AddManagerDto addManagerDto) {
+    public void updateManager(Long managerId, AddManagerDto addManagerDto) throws NotFoundException, UserAlreadyExistsException {
+        Manager manager = managerRepository.findById(managerId)
+                .orElseThrow(() -> new NotFoundException("Manager not found"));
 
+        Department department = departmentRepository.findById(addManagerDto.departmentId())
+                .orElseThrow(() -> new NotFoundException("Department not found"));
+
+        User user = userService.updateUserInfo(
+                manager.getUser().getId(), addManagerDto.user());
+
+        ManagerMapper.MANAGER_MAPPER.updateEntity(
+                manager,
+                addManagerDto.windowNumber(),
+                department,
+                user
+        );
+
+        managerRepository.save(manager);
+
+        log.info("Manager with ID {} has been updated", managerId);
     }
 
     @Override
-    public void inActivateManager(Long managerId) {
-
+    public void inActivateManager(Long managerId) throws NotFoundException {
+        Manager manager = managerRepository.findById(managerId)
+                .orElseThrow(() -> new NotFoundException("Manager not found"));
+        manager.setIsActive(false);
+        managerRepository.save(manager);
+        log.info("Manager with ID {} has been deactivated", managerId);
     }
 
     @Override
-    public void activateManager(Long managerId) {
-
+    public void activateManager(Long managerId) throws NotFoundException {
+        Manager manager = managerRepository.findById(managerId)
+                .orElseThrow(() -> new NotFoundException("Manager not found"));
+        manager.setIsActive(false);
+        managerRepository.save(manager);
+        log.info("Manager with ID {} has been activated", managerId);
     }
 }
