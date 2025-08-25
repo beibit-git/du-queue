@@ -53,7 +53,8 @@ public class SecurityConfiguration {
             "/api/v1/queue/department/*",
             "/api/v1/queue/manager",
             "/api/v1/queue/manager/*",
-            "/api/v1/queue/ticket/active-tickets"
+            "/api/v1/queue/ticket/active-tickets",
+            "/api/v1/queue/ticket/stream"
     };
 
     @PostConstruct

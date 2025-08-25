@@ -14,4 +14,5 @@ public class TicketDto {
     private String ticketNumber;
     private TicketStatus ticketStatus;
     private Department department;
+    private String windowNumber;
 }
