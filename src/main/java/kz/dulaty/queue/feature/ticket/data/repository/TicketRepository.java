@@ -58,6 +58,6 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
     // 4) Удобный метод получить сразу номер талона
     @Query("select t.ticketNumber from Ticket t where t.id = :id")
     Optional<String> findTicketNumberById(@Param("id") Long id);
-    @Query("select t from Ticket t where t.ticketStatus = 'CALLED'")
+    @Query("select t from Ticket t where t.ticketStatus = 'CALLED' ORDER BY t.lastModifiedDate DESC")
     List<Ticket> findAllActiveTickets();
 }
