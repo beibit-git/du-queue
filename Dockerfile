@@ -1,6 +1,6 @@
 FROM openjdk:17
 
-COPY ./target/dulaty-academy.jar app.jar
+COPY ./target/dulaty-queue.jar app.jar
 #COPY src/main/resources/keystore_dulaty.p12 /app/keystore_dulaty.p12
 
 #RUN /home/gitlab-runner/academy/mvnw dependency:go-offline
