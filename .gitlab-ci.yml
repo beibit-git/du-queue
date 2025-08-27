@@ -1,0 +1,42 @@
+stages:
+  - deploy
+
+deploy:
+  stage: deploy
+  before_script:
+    - 'which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )'
+    - mkdir -p ~/.ssh
+    - eval $(ssh-agent -s)
+    - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
+  script:
+    - echo "Деплой на сервер..."
+    - id
+    - ssh-add <(echo "$SSH_PRIVATE_KEY" |  tr -d '\r')
+    - cd /home/gitlab-runner/du-queue/
+    #- docker compose down
+    - git pull  
+    - echo "Содержимое директории /home/gitlab-runner/du-queue/ с датами изменения:"
+    - ls -ltah /home/gitlab-runner/du-queue/  # Просмотр содержимого директории с датой изменения    
+    # Проверяем, запущены ли контейнеры
+    - if docker compose ps | grep "Up"; then
+        echo "Контейнеры уже запущены. Перезапуск...";
+        docker compose restart;
+      else
+        echo "Контейнеры не запущены. Запуск...";
+        docker compose up -d;
+      fi
+    - docker volume ls
+    - mvn clean package
+    # Удаление старого контейнера и образа, если они существуют
+    - echo "Удаление старого контейнера и образа..."
+    - docker rm -f $(docker ps -aq --filter "ancestor=openjdk") || true
+
+    # Пересоздание Docker-образа и контейнера
+    - pwd
+    - echo "Создание Docker-образа и контейнера..."
+    - docker build -t openjdk .
+    - docker run --network="host" --restart=always -d --name openjdk-container openjdk
+    # Просмотр запущенных контейнеров
+    - docker ps
+  only:
+    - main
