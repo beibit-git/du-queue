@@ -65,5 +65,5 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
             "and (t.ticket_status = 'CALLED' or t.ticket_status = 'DONE') " +
             "order by t.last_modified_date desc  " +
             "limit 5", nativeQuery = true)
-    List<Ticket> getLast5TicketByManagerId(Long managerId);
+    List<Ticket> getLast5TicketByManagerId(@Param("managerId") Long managerId);
 }
