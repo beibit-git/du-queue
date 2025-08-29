@@ -34,8 +34,14 @@ public class TicketController {
 
     @PostMapping("/call-next")
     @PreAuthorize("hasAuthority('MANAGER')")
-    public String callNextTicket(Principal principal) throws NotFoundException {
+    public TicketDto callNextTicket(Principal principal) throws NotFoundException {
         return ticketCallingService.callNextTicket(principal.getName());
+    }
+
+    @GetMapping("/manager-tickets")
+    @PreAuthorize("hasAuthority('MANAGER')")
+    public List<TicketDto> managerCurrentTickets(Principal principal) throws NotFoundException {
+        return getTicketService.managerCurrentTickets(principal.getName());
     }
 
     @GetMapping("/active-tickets")

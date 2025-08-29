@@ -60,4 +60,10 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
     Optional<String> findTicketNumberById(@Param("id") Long id);
     @Query("select t from Ticket t where t.ticketStatus = 'CALLED' ORDER BY t.lastModifiedDate DESC")
     List<Ticket> findAllActiveTickets();
+    @Query(value = "select * from tickets t  " +
+            "where t.manager_id = :managerId " +
+            "and (t.ticket_status = 'CALLED' or t.ticket_status = 'DONE') " +
+            "order by t.last_modified_date desc  " +
+            "limit 5", nativeQuery = true)
+    List<Ticket> getLast5TicketByManagerId(Long managerId);
 }

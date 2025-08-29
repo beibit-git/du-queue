@@ -14,6 +14,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -24,7 +26,7 @@ public class TicketCallingServiceImpl implements TicketCallingService {
 
     @Override
     @Transactional
-    public String callNextTicket(String email) throws NotFoundException {
+    public TicketDto callNextTicket(String email) throws NotFoundException {
         Manager manager = managerRepository.findByUserEmail(email)
                 .orElseThrow(() -> new NotFoundException("Manager not found with email: " + email));
 
@@ -44,9 +46,10 @@ public class TicketCallingServiceImpl implements TicketCallingService {
         Ticket nextTicket = ticketRepository.findById(nextId)
                 .orElseThrow(() -> new IllegalStateException("Ticket claimed but not found: " + nextId));
 
-        emitters.sendToAll(TicketMapper.TICKET_MAPPER.toDto(nextTicket));
+        TicketDto nextTicketDto = TicketMapper.TICKET_MAPPER.toDto(nextTicket);
+
+        emitters.sendToAll(nextTicketDto);
         // Вернуть номер талона
-        return ticketRepository.findTicketNumberById(nextId)
-                .orElseThrow(() -> new IllegalStateException("Ticket claimed but not found: " + nextId));
+        return nextTicketDto;
     }
 }
