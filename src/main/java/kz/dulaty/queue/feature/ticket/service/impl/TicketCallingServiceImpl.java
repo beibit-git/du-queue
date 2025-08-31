@@ -8,13 +8,11 @@ import kz.dulaty.queue.feature.ticket.data.entity.Ticket;
 import kz.dulaty.queue.feature.ticket.data.mapper.TicketMapper;
 import kz.dulaty.queue.feature.ticket.data.repository.TicketRepository;
 import kz.dulaty.queue.feature.ticket.service.TicketCallingService;
-import kz.dulaty.queue.feature.ticket.service.sseEmitter.SseEmitters;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Slf4j
 @Service
@@ -22,7 +20,7 @@ import java.util.List;
 public class TicketCallingServiceImpl implements TicketCallingService {
     private final TicketRepository ticketRepository;
     private final ManagerRepository managerRepository;
-    private final SseEmitters emitters;
+    private final SimpMessagingTemplate messagingTemplate;
 
     @Override
     @Transactional
@@ -48,7 +46,7 @@ public class TicketCallingServiceImpl implements TicketCallingService {
 
         TicketDto nextTicketDto = TicketMapper.TICKET_MAPPER.toDto(nextTicket);
 
-        emitters.sendToAll(nextTicketDto);
+        messagingTemplate.convertAndSend("/topic/ticket-called", nextTicketDto);
         // Вернуть номер талона
         return nextTicketDto;
     }

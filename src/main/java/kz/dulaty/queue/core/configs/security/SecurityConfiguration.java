@@ -73,6 +73,7 @@ public class SecurityConfiguration {
                         .maxSessionsPreventsLogin(true))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(INSECURE_ENDPOINTS).permitAll()
+                        .requestMatchers("/ws/**", "/ws-sockjs/**").permitAll()
                         .requestMatchers("/error").permitAll()
                         .anyRequest().authenticated())
                 .exceptionHandling((exceptions) -> exceptions
