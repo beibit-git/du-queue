@@ -5,24 +5,25 @@ deploy:
   stage: deploy
   tags: [du_queue]
   before_script:
-    - 'which ssh-agent || ( apt-get update -y && apt-get install -y openssh-client git )'
+    - 'which ssh-agent || (apt-get update -y && apt-get install -y openssh-client git)'
     - mkdir -p ~/.ssh && chmod 700 ~/.ssh
-    - eval $(ssh-agent -s)
-    - ssh-add <(echo "$SSH_PRIVATE_KEY" | tr -d '\r')
-    # NEW: обновляем known_hosts под ваш GitLab (порт 22, поменяйте если свой)
+    - eval "$(ssh-agent -s)"
+    # 1) добавляем приватный ключ из переменной GitLab CI/CD: SSH_PRIVATE_KEY
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add - >/dev/null
+    # 2) refresh known_hosts для GitLab SSH
     - touch ~/.ssh/known_hosts
     - ssh-keygen -R gitlab.dulaty.kz -f ~/.ssh/known_hosts || true
     - ssh-keyscan -H -t ed25519 gitlab.dulaty.kz >> ~/.ssh/known_hosts
-    # Если GitLab на НЕ стандартном порту, используйте:
-    # - ssh-keyscan -p 2222 -H -t ed25519 gitlab.dulaty.kz >> ~/.ssh/known_hosts
-    # (опционально) ослабить проверку внутри контейнера
-    - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking accept-new\n\n" > ~/.ssh/config'
+    # 3) диагностика: показать какие ключи загружены (без секретов)
+    - ssh-add -l
+    # 4) проверка соединения с GitLab по SSH (должно вывести "Welcome to GitLab, @<user>" и выйти)
+    - ssh -o StrictHostKeyChecking=yes -T git@gitlab.dulaty.kz || true
   script:
     - echo "Деплой на сервер..."
-    - id
     - cd /home/gitlab-runner/du-queue/
-    - git pull
-    - echo "Содержимое директории /home/gitlab-runner/du-queue/ с датами изменения:"
+    - git remote -v                      # ПРОВЕРЬ, что origin = git@gitlab.dulaty.kz:<group>/<repo>.git
+    - git pull                           # теперь должно пройти
+    - echo "Содержимое директории:"
     - ls -ltah /home/gitlab-runner/du-queue/
     - if docker compose ps | grep "Up"; then
       echo "Контейнеры уже запущены. Перезапуск...";
@@ -35,10 +36,8 @@ deploy:
     - mvn clean package
     - echo "Удаление старого контейнера и образа..."
     - docker rm -f $(docker ps -aq --filter "ancestor=openjdk") || true
-    - pwd
-    - echo "Создание Docker-образа и контейнера..."
     - docker build -t openjdk .
-    - docker run --network="host" --restart=always -d --name openjdk-container openjdk
+    - docker run --network="host" --restart=always -d --name openjdk-container openjdk || docker restart openjdk-container
     - docker ps
   only:
     - main
