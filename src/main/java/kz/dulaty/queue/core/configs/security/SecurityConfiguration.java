@@ -65,6 +65,7 @@ public class SecurityConfiguration {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, AuthenticationManager authenticationManager) throws Exception {
         http
+                .headers(h -> h.frameOptions(fo -> fo.sameOrigin()))
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))  // Включаем CORS
                 .sessionManagement(configurer -> configurer
