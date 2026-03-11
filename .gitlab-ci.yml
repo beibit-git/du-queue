@@ -7,12 +7,11 @@ deploy-nginx:
   tags: [du_queue]
   when: manual
   script:
-    - ls $CI_PROJECT_DIR/nginx/
-    - cp $CI_PROJECT_DIR/nginx/queue.dulaty.edu.kz.conf /tmp/queue.dulaty.edu.kz.conf
-    - docker run --rm -v /tmp/queue.dulaty.edu.kz.conf:/tmp/nginx.conf -v /etc/nginx:/etc/nginx alpine sh -c "cp /tmp/nginx.conf /etc/nginx/sites-available/queue.dulaty.edu.kz.conf && ln -sf /etc/nginx/sites-available/queue.dulaty.edu.kz.conf /etc/nginx/sites-enabled/queue.dulaty.edu.kz.conf"
-    - docker exec $(docker ps -q --filter "name=nginx") nginx -t || true
-    - docker exec $(docker ps -q --filter "name=nginx") nginx -s reload || true
-    - echo "Готово"
+    - docker run --rm -v /etc/sudoers.d:/etc/sudoers.d alpine sh -c "echo 'gitlab-runner ALL=(ALL) NOPASSWD: /usr/sbin/nginx, /bin/systemctl reload nginx, /bin/systemctl restart nginx' > /etc/sudoers.d/gitlab-runner-nginx && chmod 440 /etc/sudoers.d/gitlab-runner-nginx"
+    - docker run --rm -v $CI_PROJECT_DIR/nginx/queue.dulaty.edu.kz.conf:/tmp/nginx.conf:ro -v /etc/nginx:/etc/nginx alpine sh -c "cp /tmp/nginx.conf /etc/nginx/sites-available/queue.dulaty.edu.kz.conf && ln -sf /etc/nginx/sites-available/queue.dulaty.edu.kz.conf /etc/nginx/sites-enabled/queue.dulaty.edu.kz.conf"
+    - sudo nginx -t
+    - sudo systemctl reload nginx
+    - echo "Nginx обновлён"
   only:
     - main
 
