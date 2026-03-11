@@ -15,7 +15,7 @@ deploy-nginx:
       docker run --rm \
         -v "${CI_PROJECT_DIR}/nginx/queue.dulaty.edu.kz.conf:/tmp/nginx.conf:ro" \
         -v /etc/nginx:/etc/nginx \
-        alpine sh -c "cp /tmp/nginx.conf /etc/nginx/sites-available/queue.dulaty.edu.kz.conf && ln -sf /etc/nginx/sites-available/queue.dulaty.edu.kz.conf /etc/nginx/sites-enabled/queue.dulaty.edu.kz.conf"
+        alpine sh -c "rm -rf /etc/nginx/sites-available/queue.dulaty.edu.kz.conf && cp /tmp/nginx.conf /etc/nginx/sites-available/queue.dulaty.edu.kz.conf && ln -sf /etc/nginx/sites-available/queue.dulaty.edu.kz.conf /etc/nginx/sites-enabled/queue.dulaty.edu.kz.conf"
     - sudo nginx -t
     - sudo systemctl reload nginx
     - echo "Nginx обновлён"
