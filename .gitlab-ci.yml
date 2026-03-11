@@ -6,6 +6,8 @@ deploy-nginx:
   stage: deploy
   tags: [du_queue]
   when: manual
+  before_script:
+    - docker run --rm -v /home/gitlab-runner/builds/LhrTeWj-v/0/developers/du-queue:/workspace alpine sh -c "rm -rf /workspace/nginx/queue.dulaty.edu.kz.conf"
   script:
     - |
       docker run --rm \
