@@ -1,9 +1,12 @@
 package kz.dulaty.queue.feature.sse;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import kz.dulaty.queue.feature.ticket.data.dto.WsEventDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -16,11 +19,9 @@ public class SseService {
 
     private final ObjectMapper objectMapper;
 
-    // Потокобезопасный список подключённых клиентов
     private final CopyOnWriteArrayList<SseEmitter> emitters = new CopyOnWriteArrayList<>();
 
     public SseEmitter subscribe() {
-        // Timeout = 0 означает бесконечное соединение
         SseEmitter emitter = new SseEmitter(0L);
         emitters.add(emitter);
 
@@ -45,15 +46,29 @@ public class SseService {
 
         for (SseEmitter emitter : emitters) {
             try {
-                emitter.send(SseEmitter.event()
-                        .name("queue-event")
-                        .data(json));
+                emitter.send(SseEmitter.event().name("queue-event").data(json));
             } catch (Exception e) {
                 emitters.remove(emitter);
             }
         }
 
         log.debug("SSE broadcast {} to {} clients", event.eventType(), emitters.size());
+    }
+
+    /**
+     * Heartbeat каждые 30 секунд — не даёт Nginx закрыть соединение по таймауту.
+     * SSE комментарий (: heartbeat) игнорируется браузером, но держит соединение живым.
+     */
+    @Scheduled(fixedDelay = 30_000)
+    public void sendHeartbeat() {
+        if (emitters.isEmpty()) return;
+        for (SseEmitter emitter : emitters) {
+            try {
+                emitter.send(SseEmitter.event().comment("heartbeat"));
+            } catch (Exception e) {
+                emitters.remove(emitter);
+            }
+        }
     }
 
     public int getConnectedCount() {

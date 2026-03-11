@@ -2,6 +2,7 @@ package kz.dulaty.queue.feature.sse;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -19,7 +20,12 @@ public class SseController {
      * GET /api/v1/queue/sse/events
      */
     @GetMapping(value = "/events", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter subscribe() {
-        return sseService.subscribe();
+    public ResponseEntity<SseEmitter> subscribe() {
+        SseEmitter emitter = sseService.subscribe();
+        return ResponseEntity.ok()
+                .header("X-Accel-Buffering", "no")
+                .header("Cache-Control", "no-cache")
+                .header("Connection", "keep-alive")
+                .body(emitter);
     }
 }
