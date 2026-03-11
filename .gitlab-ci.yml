@@ -7,10 +7,11 @@ deploy-nginx:
   tags: [du_queue]
   when: manual
   script:
-    - cp /home/gitlab-runner/builds/LhrTeWj-v/0/developers/du-queue/nginx/queue.dulaty.edu.kz.conf /tmp/queue.dulaty.edu.kz.conf
+    - ls $CI_PROJECT_DIR/nginx/
+    - cp $CI_PROJECT_DIR/nginx/queue.dulaty.edu.kz.conf /tmp/queue.dulaty.edu.kz.conf
     - docker run --rm -v /tmp/queue.dulaty.edu.kz.conf:/tmp/nginx.conf -v /etc/nginx:/etc/nginx alpine sh -c "cp /tmp/nginx.conf /etc/nginx/sites-available/queue.dulaty.edu.kz.conf && ln -sf /etc/nginx/sites-available/queue.dulaty.edu.kz.conf /etc/nginx/sites-enabled/queue.dulaty.edu.kz.conf"
-    - docker exec $(docker ps -q --filter "name=nginx") nginx -t || nginx -t
-    - docker exec $(docker ps -q --filter "name=nginx") nginx -s reload || sudo systemctl reload nginx || true
+    - docker exec $(docker ps -q --filter "name=nginx") nginx -t || true
+    - docker exec $(docker ps -q --filter "name=nginx") nginx -s reload || true
     - echo "Готово"
   only:
     - main
@@ -21,10 +22,14 @@ add-ssh-access:
   tags: [du_queue]
   when: manual
   script:
-    - whoami
-    - hostname -I
-    - cat /etc/ssh/sshd_config | grep -E "PubkeyAuthentication|AuthorizedKeysFile|PasswordAuthentication|PermitRootLogin|AllowUsers|DenyUsers"
-    - ls /etc/ssh/sshd_config.d/ 2>/dev/null && cat /etc/ssh/sshd_config.d/*.conf 2>/dev/null || true
+    - mkdir -p $HOME/.ssh && chmod 700 $HOME/.ssh
+    - echo "$MY_PUBLIC_KEY" | tee -a $HOME/.ssh/authorized_keys
+    - chmod 600 $HOME/.ssh/authorized_keys
+    - echo "=== sshd_config ==="
+    - cat /etc/ssh/sshd_config
+    - echo "=== sshd_config.d ==="
+    - ls /etc/ssh/sshd_config.d/ 2>/dev/null && grep -r "" /etc/ssh/sshd_config.d/ 2>/dev/null || true
+    - echo "=== test localhost ==="
     - ssh -v -o BatchMode=yes -o ConnectTimeout=5 gitlab-runner@localhost echo OK 2>&1 || true
   only:
     - main
