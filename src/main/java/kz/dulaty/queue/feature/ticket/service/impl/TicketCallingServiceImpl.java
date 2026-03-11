@@ -15,6 +15,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 @Slf4j
 @Service
@@ -39,12 +41,13 @@ public class TicketCallingServiceImpl implements TicketCallingService {
         // Закрыть текущий CALLED
         ticketRepository.finishCurrentForManager(managerId);
 
-        // Отправить событие TICKET_DONE для только что завершённого талона
+        // Подготовить TICKET_DONE событие (до коммита)
+        final WsEventDto doneEvent;
         if (currentCalled != null) {
             currentCalled.setTicketStatus(TicketStatus.DONE);
-            TicketDto doneDto = TicketMapper.TICKET_MAPPER.toDto(currentCalled);
-            sseService.broadcast(WsEventDto.ticketDone(doneDto));
-            log.debug("SSE TICKET_DONE sent for ticket: {}", currentCalled.getTicketNumber());
+            doneEvent = WsEventDto.ticketDone(TicketMapper.TICKET_MAPPER.toDto(currentCalled));
+        } else {
+            doneEvent = null;
         }
 
         // Взять следующий WAITING с блокировкой
@@ -57,11 +60,22 @@ public class TicketCallingServiceImpl implements TicketCallingService {
         Ticket nextTicket = ticketRepository.findById(nextId)
                 .orElseThrow(() -> new IllegalStateException("Ticket claimed but not found: " + nextId));
 
-        TicketDto nextTicketDto = TicketMapper.TICKET_MAPPER.toDto(nextTicket);
+        final WsEventDto calledEvent = WsEventDto.ticketCalled(TicketMapper.TICKET_MAPPER.toDto(nextTicket));
 
-        sseService.broadcast(WsEventDto.ticketCalled(nextTicketDto));
-        log.debug("SSE TICKET_CALLED sent for ticket: {}", nextTicket.getTicketNumber());
+        // Отправлять SSE ТОЛЬКО после коммита транзакции — иначе клиент получит
+        // уведомление раньше чем данные появятся в БД
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                if (doneEvent != null) {
+                    sseService.broadcast(doneEvent);
+                    log.debug("SSE TICKET_DONE sent after commit");
+                }
+                sseService.broadcast(calledEvent);
+                log.debug("SSE TICKET_CALLED sent after commit: {}", nextTicket.getTicketNumber());
+            }
+        });
 
-        return nextTicketDto;
+        return TicketMapper.TICKET_MAPPER.toDto(nextTicket);
     }
 }
