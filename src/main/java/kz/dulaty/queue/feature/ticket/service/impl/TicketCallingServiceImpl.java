@@ -10,9 +10,9 @@ import kz.dulaty.queue.feature.ticket.data.enums.TicketStatus;
 import kz.dulaty.queue.feature.ticket.data.mapper.TicketMapper;
 import kz.dulaty.queue.feature.ticket.data.repository.TicketRepository;
 import kz.dulaty.queue.feature.ticket.service.TicketCallingService;
+import kz.dulaty.queue.feature.sse.SseService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,11 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class TicketCallingServiceImpl implements TicketCallingService {
     private final TicketRepository ticketRepository;
     private final ManagerRepository managerRepository;
-    private final SimpMessagingTemplate messagingTemplate;
-
-    private static final String QUEUE_EVENTS_TOPIC = "/topic/queue-events";
-    /** Старый топик — для обратной совместимости */
-    private static final String TICKET_CALLED_TOPIC = "/topic/ticket-called";
+    private final SseService sseService;
 
     @Override
     @Transactional
@@ -47,8 +43,8 @@ public class TicketCallingServiceImpl implements TicketCallingService {
         if (currentCalled != null) {
             currentCalled.setTicketStatus(TicketStatus.DONE);
             TicketDto doneDto = TicketMapper.TICKET_MAPPER.toDto(currentCalled);
-            messagingTemplate.convertAndSend(QUEUE_EVENTS_TOPIC, WsEventDto.ticketDone(doneDto));
-            log.debug("WS TICKET_DONE sent for ticket: {}", currentCalled.getTicketNumber());
+            sseService.broadcast(WsEventDto.ticketDone(doneDto));
+            log.debug("SSE TICKET_DONE sent for ticket: {}", currentCalled.getTicketNumber());
         }
 
         // Взять следующий WAITING с блокировкой
@@ -63,11 +59,9 @@ public class TicketCallingServiceImpl implements TicketCallingService {
 
         TicketDto nextTicketDto = TicketMapper.TICKET_MAPPER.toDto(nextTicket);
 
-        // Отправить событие TICKET_CALLED на оба топика
-        messagingTemplate.convertAndSend(QUEUE_EVENTS_TOPIC, WsEventDto.ticketCalled(nextTicketDto));
-        messagingTemplate.convertAndSend(TICKET_CALLED_TOPIC, nextTicketDto); // backward compat
+        sseService.broadcast(WsEventDto.ticketCalled(nextTicketDto));
+        log.debug("SSE TICKET_CALLED sent for ticket: {}", nextTicket.getTicketNumber());
 
-        log.debug("WS TICKET_CALLED sent for ticket: {}", nextTicket.getTicketNumber());
         return nextTicketDto;
     }
 }

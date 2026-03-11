@@ -76,6 +76,7 @@ public class SecurityConfiguration {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(INSECURE_ENDPOINTS).permitAll()
                         .requestMatchers("/ws/**", "/ws-sockjs/**").permitAll()
+                        .requestMatchers("/api/v1/queue/sse/**").permitAll()
                         .requestMatchers("/error").permitAll()
                         .anyRequest().authenticated())
                 .exceptionHandling((exceptions) -> exceptions

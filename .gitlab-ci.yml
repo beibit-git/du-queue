@@ -1,42 +1,6 @@
 stages:
   - deploy
 
-# ── Ручной job: задеплоить Nginx конфиг и перезагрузить Nginx ─────────────────
-deploy-nginx:
-  stage: deploy
-  tags: [du_queue]
-  when: manual
-  variables:
-    GIT_STRATEGY: none
-    BUILD_DIR: /home/gitlab-runner/builds/LhrTeWj-v/0/developers/du-queue
-  script:
-    # Очистить root-owned файлы и обновить код
-    - docker run --rm -v "${BUILD_DIR}:/workspace" alpine sh -c "rm -rf /workspace/nginx/queue.dulaty.edu.kz.conf"
-    - cd "${BUILD_DIR}" && git fetch origin main && git checkout FETCH_HEAD -- nginx/
-    # Добавить sudoers правило
-    - docker run --rm -v /etc/sudoers.d:/etc/sudoers.d alpine sh -c "echo 'gitlab-runner ALL=(ALL) NOPASSWD: /usr/sbin/nginx, /bin/systemctl reload nginx, /bin/systemctl restart nginx' > /etc/sudoers.d/gitlab-runner-nginx && chmod 440 /etc/sudoers.d/gitlab-runner-nginx"
-    # Скопировать конфиг nginx
-    - docker run --rm -v "${BUILD_DIR}/nginx/queue.dulaty.edu.kz.conf:/tmp/nginx.conf:ro" -v /etc/nginx:/etc/nginx alpine sh -c "rm -rf /etc/nginx/sites-available/queue.dulaty.edu.kz.conf && cp /tmp/nginx.conf /etc/nginx/sites-available/queue.dulaty.edu.kz.conf && ln -sf /etc/nginx/sites-available/queue.dulaty.edu.kz.conf /etc/nginx/sites-enabled/queue.dulaty.edu.kz.conf"
-    # Проверить и перезагрузить
-    - sudo nginx -t
-    - sudo systemctl reload nginx
-    - echo "Nginx обновлён"
-  only:
-    - main
-
-# ── Ручной job: добавить SSH ключ для прямого доступа к серверу ───────────────
-add-ssh-access:
-  stage: deploy
-  tags: [du_queue]
-  when: manual
-  script:
-    - mkdir -p $HOME/.ssh && chmod 700 $HOME/.ssh
-    - echo "$MY_PUBLIC_KEY" | tee -a $HOME/.ssh/authorized_keys
-    - chmod 600 $HOME/.ssh/authorized_keys
-    - cat /etc/ssh/sshd_config.d/50-cloud-init.conf
-  only:
-    - main
-
 deploy:
   stage: deploy
   tags: [du_queue]

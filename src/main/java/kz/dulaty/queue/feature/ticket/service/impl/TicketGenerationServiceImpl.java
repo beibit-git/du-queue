@@ -10,9 +10,9 @@ import kz.dulaty.queue.feature.ticket.data.mapper.TicketMapper;
 import kz.dulaty.queue.feature.department.data.repository.DepartmentRepository;
 import kz.dulaty.queue.feature.ticket.data.repository.TicketRepository;
 import kz.dulaty.queue.feature.ticket.service.TicketGenerationService;
+import kz.dulaty.queue.feature.sse.SseService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
@@ -23,9 +23,7 @@ import java.util.UUID;
 public class TicketGenerationServiceImpl implements TicketGenerationService {
     private final TicketRepository ticketRepository;
     private final DepartmentRepository departmentRepository;
-    private final SimpMessagingTemplate messagingTemplate;
-
-    private static final String QUEUE_EVENTS_TOPIC = "/topic/queue-events";
+    private final SseService sseService;
 
     @Override
     public TicketDto generateTicket(TicketRequestDto request) {
@@ -56,8 +54,8 @@ public class TicketGenerationServiceImpl implements TicketGenerationService {
         TicketDto dto = TicketMapper.TICKET_MAPPER.toDto(newTicket);
 
         // Оповестить всех подключённых клиентов о новом талоне в очереди
-        messagingTemplate.convertAndSend(QUEUE_EVENTS_TOPIC, WsEventDto.ticketGenerated(dto));
-        log.debug("WS TICKET_GENERATED sent for ticket: {}", newTicket.getTicketNumber());
+        sseService.broadcast(WsEventDto.ticketGenerated(dto));
+        log.debug("SSE TICKET_GENERATED sent for ticket: {}", newTicket.getTicketNumber());
 
         return dto;
     }
