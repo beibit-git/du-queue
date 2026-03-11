@@ -1,0 +1,173 @@
+databaseChangeLog:
+
+  # ══════════════════════════════════════════════════════════════════════════════
+  #  ТЕСТОВЫЕ ДАННЫЕ — Университет Дулати
+  #
+  #  Пароли (BCrypt $2b$10$):
+  #    admin@dulaty.kz    → Admin123
+  #    moder@dulaty.kz    → Moder123
+  #    manager1-4@dulaty.kz → Manager1
+  #
+  #  Чтобы не применять в production — добавь context: dev к каждому changeSet
+  #  или удали файл перед деплоем.
+  # ══════════════════════════════════════════════════════════════════════════════
+
+  # ─── 1. Отделы ────────────────────────────────────────────────────────────────
+  - changeSet:
+      id: 20260311-001-insert-test-departments
+      author: test-data
+      preConditions:
+        - onFail: MARK_RAN
+        - sqlCheck:
+            expectedResult: 0
+            sql: SELECT COUNT(*) FROM departments WHERE prefix IN ('A','B','C','D')
+      changes:
+        - sql:
+            sql: >-
+              INSERT INTO departments (name, full_name, prefix, created_date, last_modified_date) VALUES
+                ('Регистратура',  'Отдел регистрации и учёта студентов',        'A', NOW(), NOW()),
+                ('Деканат',       'Деканат по учебной и воспитательной работе',  'B', NOW(), NOW()),
+                ('Бухгалтерия',   'Финансово-экономический отдел',               'C', NOW(), NOW()),
+                ('Библиотека',    'Библиотечный информационный центр',           'D', NOW(), NOW());
+
+  # ─── 2. Пользователи ─────────────────────────────────────────────────────────
+  - changeSet:
+      id: 20260311-002-insert-test-users
+      author: test-data
+      preConditions:
+        - onFail: MARK_RAN
+        - sqlCheck:
+            expectedResult: 0
+            sql: SELECT COUNT(*) FROM users WHERE email IN ('admin@dulaty.kz','moder@dulaty.kz','manager1@dulaty.kz','manager2@dulaty.kz','manager3@dulaty.kz','manager4@dulaty.kz')
+      changes:
+        - sql:
+            sql: >-
+              INSERT INTO users
+                (name, surname, patronymic, email, password, phone_number,
+                 is_active, is_locked, created_date, last_modified_date)
+              VALUES
+                ('Айгерим', 'Касымова',  'Бекзатовна',
+                 'admin@dulaty.kz',
+                 '$2b$10$.FTYGLo7GX/NOuQhBGHAG.sxqaS6hYj.45s/avJ6K9RYjqVOD.KL.',
+                 '77001111111', TRUE, FALSE, NOW(), NOW()),
+
+                ('Берик',   'Жумабаев', 'Серікқалыұлы',
+                 'moder@dulaty.kz',
+                 '$2b$10$Osu30QHv2LzwqOPet501.eXKctCghY0lDpweDGwWDWW4nlSOE9CEq',
+                 '77002222222', TRUE, FALSE, NOW(), NOW()),
+
+                ('Нурсулу', 'Ахметова',  'Ержанқызы',
+                 'manager1@dulaty.kz',
+                 '$2b$10$6rqyHjUIMhtbJSqo8SaJ8u36rDnZA.6vgFbmu4S7h69q5pCT4lLWG',
+                 '77003333333', TRUE, FALSE, NOW(), NOW()),
+
+                ('Дамир',   'Сейткали',  'Мырзабекұлы',
+                 'manager2@dulaty.kz',
+                 '$2b$10$6rqyHjUIMhtbJSqo8SaJ8u36rDnZA.6vgFbmu4S7h69q5pCT4lLWG',
+                 '77004444444', TRUE, FALSE, NOW(), NOW()),
+
+                ('Зарина',  'Байжанова', 'Сабитқызы',
+                 'manager3@dulaty.kz',
+                 '$2b$10$6rqyHjUIMhtbJSqo8SaJ8u36rDnZA.6vgFbmu4S7h69q5pCT4lLWG',
+                 '77005555555', TRUE, FALSE, NOW(), NOW()),
+
+                ('Алибек',  'Нурланов',  'Маратұлы',
+                 'manager4@dulaty.kz',
+                 '$2b$10$6rqyHjUIMhtbJSqo8SaJ8u36rDnZA.6vgFbmu4S7h69q5pCT4lLWG',
+                 '77006666666', TRUE, FALSE, NOW(), NOW());
+
+  # ─── 3. Роли пользователей ───────────────────────────────────────────────────
+  - changeSet:
+      id: 20260311-003-insert-test-user-roles
+      author: test-data
+      preConditions:
+        - onFail: MARK_RAN
+        - sqlCheck:
+            expectedResult: 0
+            sql: >-
+              SELECT COUNT(*) FROM user_roles ur
+              JOIN users u ON u.id = ur.user_id
+              WHERE u.email = 'admin@dulaty.kz'
+      changes:
+        - sql:
+            sql: |
+              -- ADMIN
+              INSERT INTO user_roles (user_id, role_id)
+              SELECT u.id, r.id
+              FROM users u
+              JOIN roles r ON r.safety_role = 'ADMIN'
+              WHERE u.email = 'admin@dulaty.kz'
+                AND NOT EXISTS (
+                  SELECT 1 FROM user_roles x
+                  WHERE x.user_id = u.id AND x.role_id = r.id
+                );
+
+              -- MODERATOR
+              INSERT INTO user_roles (user_id, role_id)
+              SELECT u.id, r.id
+              FROM users u
+              JOIN roles r ON r.safety_role = 'MODERATOR'
+              WHERE u.email = 'moder@dulaty.kz'
+                AND NOT EXISTS (
+                  SELECT 1 FROM user_roles x
+                  WHERE x.user_id = u.id AND x.role_id = r.id
+                );
+
+              -- MANAGER × 4
+              INSERT INTO user_roles (user_id, role_id)
+              SELECT u.id, r.id
+              FROM users u
+              JOIN roles r ON r.safety_role = 'MANAGER'
+              WHERE u.email IN (
+                'manager1@dulaty.kz',
+                'manager2@dulaty.kz',
+                'manager3@dulaty.kz',
+                'manager4@dulaty.kz'
+              )
+              AND NOT EXISTS (
+                SELECT 1 FROM user_roles x
+                WHERE x.user_id = u.id AND x.role_id = r.id
+              );
+
+  # ─── 4. Менеджеры (привязка пользователей к отделам и окнам) ─────────────────
+  - changeSet:
+      id: 20260311-004-insert-test-managers
+      author: test-data
+      preConditions:
+        - onFail: MARK_RAN
+        - sqlCheck:
+            expectedResult: 0
+            sql: >-
+              SELECT COUNT(*) FROM managers m
+              JOIN users u ON u.id = m.user_id
+              WHERE u.email LIKE 'manager%@dulaty.kz'
+      changes:
+        - sql:
+            sql: |
+              -- Менеджер 1 → Регистратура, окно 1
+              INSERT INTO managers (window_number, department_id, user_id, is_active, created_date, last_modified_date)
+              SELECT '1', d.id, u.id, TRUE, NOW(), NOW()
+              FROM departments d
+              JOIN users u ON u.email = 'manager1@dulaty.kz'
+              WHERE d.prefix = 'A';
+
+              -- Менеджер 2 → Деканат, окно 2
+              INSERT INTO managers (window_number, department_id, user_id, is_active, created_date, last_modified_date)
+              SELECT '2', d.id, u.id, TRUE, NOW(), NOW()
+              FROM departments d
+              JOIN users u ON u.email = 'manager2@dulaty.kz'
+              WHERE d.prefix = 'B';
+
+              -- Менеджер 3 → Бухгалтерия, окно 3
+              INSERT INTO managers (window_number, department_id, user_id, is_active, created_date, last_modified_date)
+              SELECT '3', d.id, u.id, TRUE, NOW(), NOW()
+              FROM departments d
+              JOIN users u ON u.email = 'manager3@dulaty.kz'
+              WHERE d.prefix = 'C';
+
+              -- Менеджер 4 → Библиотека, окно 4
+              INSERT INTO managers (window_number, department_id, user_id, is_active, created_date, last_modified_date)
+              SELECT '4', d.id, u.id, TRUE, NOW(), NOW()
+              FROM departments d
+              JOIN users u ON u.email = 'manager4@dulaty.kz'
+              WHERE d.prefix = 'D';

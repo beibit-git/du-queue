@@ -11,6 +11,7 @@ import kz.dulaty.queue.core.properties.EmailProperties;
 import kz.dulaty.queue.feature.auth.data.dto.ResetPasswordRequest;
 import kz.dulaty.queue.feature.auth.data.dto.SignInRequestDto;
 import kz.dulaty.queue.feature.auth.data.dto.SignUpRequest;
+import kz.dulaty.queue.feature.auth.data.dto.UpdateUserRequest;
 import kz.dulaty.queue.feature.auth.data.dto.UserInfoDto;
 import kz.dulaty.queue.feature.auth.data.entity.ConfirmationToken;
 import kz.dulaty.queue.feature.auth.data.entity.User;
@@ -199,6 +200,32 @@ public class UserServiceImpl implements UserService {
         }
 
         return confirmationToken;
+    }
+
+    @Override
+    public User updateManagerUser(Long id, UpdateUserRequest requestDto) throws NotFoundException, UserAlreadyExistsException {
+        var user = userRepository.findById(id).orElseThrow(() -> new NotFoundException("User not found"));
+
+        if (!user.getPhoneNumber().equals(requestDto.phoneNumber())) {
+            checkIfUserExistsByPhoneNumber(requestDto.phoneNumber());
+        }
+        if (!user.getEmail().equals(requestDto.email())) {
+            checkIfUserExistsByEmail(requestDto.email());
+        }
+
+        user.setName(requestDto.name());
+        user.setSurname(requestDto.surname());
+        user.setPatronymic(requestDto.patronymic());
+        user.setEmail(requestDto.email());
+        user.setPhoneNumber(requestDto.phoneNumber());
+
+        if (requestDto.password() != null && !requestDto.password().isBlank()) {
+            user.setPassword(encoder.encode(requestDto.password()));
+        }
+
+        userRepository.save(user);
+        log.info("Manager user with ID {} has been updated", id);
+        return user;
     }
 
     private void sendVerificationToken(User user) {

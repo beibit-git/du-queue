@@ -58,8 +58,15 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
     // 4) Удобный метод получить сразу номер талона
     @Query("select t.ticketNumber from Ticket t where t.id = :id")
     Optional<String> findTicketNumberById(@Param("id") Long id);
-    @Query("select t from Ticket t where t.ticketStatus = 'CALLED' ORDER BY t.lastModifiedDate DESC")
+
+    // 5) Все активные талоны (WAITING + CALLED) — для публичной доски
+    @Query(value = "SELECT * FROM tickets WHERE ticket_status IN ('WAITING', 'CALLED') ORDER BY created_date ASC", nativeQuery = true)
     List<Ticket> findAllActiveTickets();
+
+    // 6) Текущий вызванный талон менеджера (нужен для события TICKET_DONE)
+    @Query(value = "SELECT * FROM tickets WHERE manager_id = :managerId AND ticket_status = 'CALLED' LIMIT 1", nativeQuery = true)
+    Optional<Ticket> findCurrentCalledForManager(@Param("managerId") Long managerId);
+
     @Query(value = "select * from tickets t  " +
             "where t.manager_id = :managerId " +
             "and (t.ticket_status = 'CALLED' or t.ticket_status = 'DONE') " +

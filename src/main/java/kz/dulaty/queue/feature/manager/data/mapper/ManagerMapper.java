@@ -34,6 +34,7 @@ public interface ManagerMapper {
                       String windowNumber,
                       Department department,
                       User user);
+    @Mapping(target = "id", source = "manager.id")
     @Mapping(target = "name", source = "manager.user.name")
     @Mapping(target = "surname", source = "manager.user.surname")
     @Mapping(target = "patronymic", source = "manager.user.patronymic")

@@ -8,6 +8,7 @@ import kz.dulaty.queue.core.exception.UserAlreadyExistsException;
 import kz.dulaty.queue.feature.manager.data.dto.AddManagerDto;
 import kz.dulaty.queue.feature.manager.data.dto.ManagerDto;
 import kz.dulaty.queue.feature.manager.data.dto.ManagerFilter;
+import kz.dulaty.queue.feature.manager.data.dto.UpdateManagerDto;
 import kz.dulaty.queue.feature.manager.service.GetManagerService;
 import kz.dulaty.queue.feature.manager.service.ManagerOperationService;
 import lombok.RequiredArgsConstructor;
@@ -52,9 +53,9 @@ public class ManagerController {
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'MODERATOR')")
     public void updateManager(@PathVariable Long id,
-                              @RequestBody AddManagerDto addManagerDto) throws NotFoundException, UserAlreadyExistsException {
+                              @RequestBody @Valid UpdateManagerDto updateManagerDto) throws NotFoundException, UserAlreadyExistsException {
         log.info("Updating manager with id: {}", id);
-        managerOperationService.updateManager(id, addManagerDto);
+        managerOperationService.updateManager(id, updateManagerDto);
         log.info("Manager updated successfully");
     }
 

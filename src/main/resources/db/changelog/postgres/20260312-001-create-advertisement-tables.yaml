@@ -1,0 +1,79 @@
+databaseChangeLog:
+
+  # ── 1. Настройки рекламного блока (синглтон) ─────────────────────────────────
+  - changeSet:
+      id: 20260312-001-create-ad-settings
+      author: dev
+      changes:
+        - createTable:
+            tableName: ad_settings
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: ads_enabled
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: switch_interval_seconds
+                  type: integer
+                  defaultValueNumeric: 30
+                  constraints:
+                    nullable: false
+        - insert:
+            tableName: ad_settings
+            columns:
+              - column:
+                  name: id
+                  valueNumeric: 1
+              - column:
+                  name: ads_enabled
+                  valueBoolean: false
+              - column:
+                  name: switch_interval_seconds
+                  valueNumeric: 30
+
+  # ── 2. Рекламные ролики ───────────────────────────────────────────────────────
+  - changeSet:
+      id: 20260312-002-create-advertisements
+      author: dev
+      changes:
+        - createTable:
+            tableName: advertisements
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: youtube_url
+                  type: varchar(500)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: order_index
+                  type: integer
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: is_active
+                  type: boolean
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_date
+                  type: timestamp
+              - column:
+                  name: last_modified_date
+                  type: timestamp

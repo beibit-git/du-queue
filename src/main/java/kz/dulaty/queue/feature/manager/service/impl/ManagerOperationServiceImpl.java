@@ -8,6 +8,7 @@ import kz.dulaty.queue.feature.auth.service.UserService;
 import kz.dulaty.queue.feature.department.data.entity.Department;
 import kz.dulaty.queue.feature.department.data.repository.DepartmentRepository;
 import kz.dulaty.queue.feature.manager.data.dto.AddManagerDto;
+import kz.dulaty.queue.feature.manager.data.dto.UpdateManagerDto;
 import kz.dulaty.queue.feature.manager.data.entity.Manager;
 import kz.dulaty.queue.feature.manager.data.mapper.ManagerMapper;
 import kz.dulaty.queue.feature.manager.data.repository.ManagerRepository;
@@ -69,6 +70,22 @@ public class ManagerOperationServiceImpl implements ManagerOperationService {
     }
 
     @Override
+    public void updateManager(Long managerId, UpdateManagerDto updateManagerDto) throws NotFoundException, UserAlreadyExistsException {
+        Manager manager = managerRepository.findById(managerId)
+                .orElseThrow(() -> new NotFoundException("Manager not found"));
+
+        Department department = departmentRepository.findById(updateManagerDto.departmentId())
+                .orElseThrow(() -> new NotFoundException("Department not found"));
+
+        User user = userService.updateManagerUser(manager.getUser().getId(), updateManagerDto.user());
+
+        ManagerMapper.MANAGER_MAPPER.updateEntity(manager, updateManagerDto.windowNumber(), department, user);
+        managerRepository.save(manager);
+
+        log.info("Manager with ID {} has been updated (via UpdateManagerDto)", managerId);
+    }
+
+    @Override
     public void inActivateManager(Long managerId) throws NotFoundException {
         Manager manager = managerRepository.findById(managerId)
                 .orElseThrow(() -> new NotFoundException("Manager not found"));
@@ -81,7 +98,7 @@ public class ManagerOperationServiceImpl implements ManagerOperationService {
     public void activateManager(Long managerId) throws NotFoundException {
         Manager manager = managerRepository.findById(managerId)
                 .orElseThrow(() -> new NotFoundException("Manager not found"));
-        manager.setIsActive(false);
+        manager.setIsActive(true);
         managerRepository.save(manager);
         log.info("Manager with ID {} has been activated", managerId);
     }

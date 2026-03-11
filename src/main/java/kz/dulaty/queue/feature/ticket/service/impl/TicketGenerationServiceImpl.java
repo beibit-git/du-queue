@@ -2,6 +2,7 @@ package kz.dulaty.queue.feature.ticket.service.impl;
 
 import kz.dulaty.queue.feature.ticket.data.dto.TicketDto;
 import kz.dulaty.queue.feature.ticket.data.dto.TicketRequestDto;
+import kz.dulaty.queue.feature.ticket.data.dto.WsEventDto;
 import kz.dulaty.queue.feature.department.data.entity.Department;
 import kz.dulaty.queue.feature.ticket.data.entity.Ticket;
 import kz.dulaty.queue.feature.ticket.data.enums.TicketStatus;
@@ -11,6 +12,7 @@ import kz.dulaty.queue.feature.ticket.data.repository.TicketRepository;
 import kz.dulaty.queue.feature.ticket.service.TicketGenerationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
@@ -21,6 +23,9 @@ import java.util.UUID;
 public class TicketGenerationServiceImpl implements TicketGenerationService {
     private final TicketRepository ticketRepository;
     private final DepartmentRepository departmentRepository;
+    private final SimpMessagingTemplate messagingTemplate;
+
+    private static final String QUEUE_EVENTS_TOPIC = "/topic/queue-events";
 
     @Override
     public TicketDto generateTicket(TicketRequestDto request) {
@@ -28,23 +33,32 @@ public class TicketGenerationServiceImpl implements TicketGenerationService {
         Department department = departmentRepository.findById(request.getDepartmentId())
                 .orElseThrow(() -> new IllegalArgumentException("Department not found"));
 
-        Ticket ticket = ticketRepository.findByPhoneNumberAndDepartmentAndTicketStatus(
+        // Если уже есть WAITING талон с этим номером для этого отдела — вернуть существующий
+        Ticket existing = ticketRepository.findByPhoneNumberAndDepartmentAndTicketStatus(
                 request.getPhoneNumber(),
                 department,
                 TicketStatus.WAITING);
 
-        if(ticket != null) {
-            log.info("Ticket already exists for phone number: {}", request.getPhoneNumber());
-            return TicketMapper.TICKET_MAPPER.toDto(ticket);
-        } else {
-            Ticket newTicket = new Ticket();
-            newTicket.setPhoneNumber(request.getPhoneNumber());
-            newTicket.setDepartment(department);
-            newTicket.setTicketNumber(ticketRepository.getNextTicketNumber(request.getDepartmentId().intValue()));
-            newTicket.setTrackingToken(UUID.randomUUID().toString());
-            newTicket.setTicketStatus(TicketStatus.WAITING);
-            ticketRepository.save(newTicket);
-            return TicketMapper.TICKET_MAPPER.toDto(newTicket);
+        if (existing != null) {
+            log.info("Existing WAITING ticket returned for phone: {}", request.getPhoneNumber());
+            return TicketMapper.TICKET_MAPPER.toDto(existing);
         }
+
+        // Создать новый талон
+        Ticket newTicket = new Ticket();
+        newTicket.setPhoneNumber(request.getPhoneNumber());
+        newTicket.setDepartment(department);
+        newTicket.setTicketNumber(ticketRepository.getNextTicketNumber(request.getDepartmentId().intValue()));
+        newTicket.setTrackingToken(UUID.randomUUID().toString());
+        newTicket.setTicketStatus(TicketStatus.WAITING);
+        ticketRepository.save(newTicket);
+
+        TicketDto dto = TicketMapper.TICKET_MAPPER.toDto(newTicket);
+
+        // Оповестить всех подключённых клиентов о новом талоне в очереди
+        messagingTemplate.convertAndSend(QUEUE_EVENTS_TOPIC, WsEventDto.ticketGenerated(dto));
+        log.debug("WS TICKET_GENERATED sent for ticket: {}", newTicket.getTicketNumber());
+
+        return dto;
     }
 }

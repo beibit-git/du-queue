@@ -4,7 +4,9 @@ import kz.dulaty.queue.core.exception.NotFoundException;
 import kz.dulaty.queue.feature.manager.data.entity.Manager;
 import kz.dulaty.queue.feature.manager.data.repository.ManagerRepository;
 import kz.dulaty.queue.feature.ticket.data.dto.TicketDto;
+import kz.dulaty.queue.feature.ticket.data.dto.WsEventDto;
 import kz.dulaty.queue.feature.ticket.data.entity.Ticket;
+import kz.dulaty.queue.feature.ticket.data.enums.TicketStatus;
 import kz.dulaty.queue.feature.ticket.data.mapper.TicketMapper;
 import kz.dulaty.queue.feature.ticket.data.repository.TicketRepository;
 import kz.dulaty.queue.feature.ticket.service.TicketCallingService;
@@ -22,6 +24,10 @@ public class TicketCallingServiceImpl implements TicketCallingService {
     private final ManagerRepository managerRepository;
     private final SimpMessagingTemplate messagingTemplate;
 
+    private static final String QUEUE_EVENTS_TOPIC = "/topic/queue-events";
+    /** Старый топик — для обратной совместимости */
+    private static final String TICKET_CALLED_TOPIC = "/topic/ticket-called";
+
     @Override
     @Transactional
     public TicketDto callNextTicket(String email) throws NotFoundException {
@@ -31,14 +37,25 @@ public class TicketCallingServiceImpl implements TicketCallingService {
         Long managerId = manager.getId();
         Long departmentId = manager.getDepartment().getId();
 
-        // Закрыть текущий CALLED (если есть)
+        // Получаем текущий CALLED талон менеджера до завершения (для TICKET_DONE события)
+        Ticket currentCalled = ticketRepository.findCurrentCalledForManager(managerId).orElse(null);
+
+        // Закрыть текущий CALLED
         ticketRepository.finishCurrentForManager(managerId);
+
+        // Отправить событие TICKET_DONE для только что завершённого талона
+        if (currentCalled != null) {
+            currentCalled.setTicketStatus(TicketStatus.DONE);
+            TicketDto doneDto = TicketMapper.TICKET_MAPPER.toDto(currentCalled);
+            messagingTemplate.convertAndSend(QUEUE_EVENTS_TOPIC, WsEventDto.ticketDone(doneDto));
+            log.debug("WS TICKET_DONE sent for ticket: {}", currentCalled.getTicketNumber());
+        }
 
         // Взять следующий WAITING с блокировкой
         Long nextId = ticketRepository.selectNextWaitingIdForUpdate(departmentId)
-                .orElseThrow(() -> new NotFoundException("No waiting tickets found for manager: " + manager.getUser().getEmail()));
+                .orElseThrow(() -> new NotFoundException("No waiting tickets found for department: " + departmentId));
 
-        // Назначить его текущему менеджеру
+        // Назначить менеджеру
         ticketRepository.claimById(nextId, managerId);
 
         Ticket nextTicket = ticketRepository.findById(nextId)
@@ -46,8 +63,11 @@ public class TicketCallingServiceImpl implements TicketCallingService {
 
         TicketDto nextTicketDto = TicketMapper.TICKET_MAPPER.toDto(nextTicket);
 
-        messagingTemplate.convertAndSend("/topic/ticket-called", nextTicketDto);
-        // Вернуть номер талона
+        // Отправить событие TICKET_CALLED на оба топика
+        messagingTemplate.convertAndSend(QUEUE_EVENTS_TOPIC, WsEventDto.ticketCalled(nextTicketDto));
+        messagingTemplate.convertAndSend(TICKET_CALLED_TOPIC, nextTicketDto); // backward compat
+
+        log.debug("WS TICKET_CALLED sent for ticket: {}", nextTicket.getTicketNumber());
         return nextTicketDto;
     }
 }
