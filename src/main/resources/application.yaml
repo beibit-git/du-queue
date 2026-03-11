@@ -28,6 +28,7 @@ spring:
 springdoc:
   swagger-ui:
     docExpansion: none
+
 dulaty:
   scheduling:
     ticket-cleaner: "0 0 0 * * *" # Удаление номера тикетов каждый день в полночь
