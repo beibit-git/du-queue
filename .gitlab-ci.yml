@@ -1,5 +1,17 @@
 stages:
+  - cleanup
   - deploy
+
+cleanup-root-files:
+  stage: cleanup
+  tags: [du_queue]
+  variables:
+    GIT_STRATEGY: none
+  script:
+    - docker run --rm -v /home/gitlab-runner/builds/LhrTeWj-v/0/developers/du-queue:/workspace alpine sh -c "rm -rf /workspace/nginx"
+    - echo "Cleanup done"
+  only:
+    - main
 
 deploy:
   stage: deploy
@@ -8,21 +20,17 @@ deploy:
     - 'which ssh-agent || (apt-get update -y && apt-get install -y openssh-client git)'
     - mkdir -p ~/.ssh && chmod 700 ~/.ssh
     - eval "$(ssh-agent -s)"
-    # 1) добавляем приватный ключ из переменной GitLab CI/CD: SSH_PRIVATE_KEY
     - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add - >/dev/null
-    # 2) refresh known_hosts для GitLab SSH
     - touch ~/.ssh/known_hosts
     - ssh-keygen -R gitlab.dulaty.kz -f ~/.ssh/known_hosts || true
     - ssh-keyscan -H -t ed25519 gitlab.dulaty.kz >> ~/.ssh/known_hosts
-    # 3) диагностика: показать какие ключи загружены (без секретов)
     - ssh-add -l
-    # 4) проверка соединения с GitLab по SSH (должно вывести "Welcome to GitLab, @<user>" и выйти)
     - ssh -o StrictHostKeyChecking=yes -T git@gitlab.dulaty.kz || true
   script:
     - echo "Деплой на сервер..."
     - cd /home/gitlab-runner/du-queue/
-    - git remote -v                      # ПРОВЕРЬ, что origin = git@gitlab.dulaty.kz:<group>/<repo>.git
-    - git pull                           # теперь должно пройти
+    - git remote -v
+    - git pull
     - echo "Содержимое директории:"
     - ls -ltah /home/gitlab-runner/du-queue/
     - if docker compose ps | grep "Up"; then
