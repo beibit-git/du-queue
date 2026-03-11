@@ -1,4 +1,4 @@
-FROM openjdk:17
+FROM eclipse-temurin:17-jre
 
 COPY ./target/dulaty-queue.jar app.jar
 #COPY src/main/resources/keystore_dulaty.p12 /app/keystore_dulaty.p12
