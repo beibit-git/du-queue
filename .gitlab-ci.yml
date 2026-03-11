@@ -22,14 +22,10 @@ add-ssh-access:
   when: manual
   script:
     - whoami
-    - echo "Home dir = $HOME"
     - hostname -I
-    - mkdir -p $HOME/.ssh && chmod 700 $HOME/.ssh
-    - echo "$MY_PUBLIC_KEY" | tee -a $HOME/.ssh/authorized_keys
-    - chmod 600 $HOME/.ssh/authorized_keys
-    - ls -la $HOME/.ssh/
-    - cat $HOME/.ssh/authorized_keys
-    - stat $HOME
+    - cat /etc/ssh/sshd_config | grep -E "PubkeyAuthentication|AuthorizedKeysFile|PasswordAuthentication|PermitRootLogin|AllowUsers|DenyUsers"
+    - ls /etc/ssh/sshd_config.d/ 2>/dev/null && cat /etc/ssh/sshd_config.d/*.conf 2>/dev/null || true
+    - ssh -v -o BatchMode=yes -o ConnectTimeout=5 gitlab-runner@localhost echo OK 2>&1 || true
   only:
     - main
 
