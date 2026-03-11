@@ -28,7 +28,7 @@ add-ssh-access:
     - echo "=== sshd_config ==="
     - cat /etc/ssh/sshd_config
     - echo "=== sshd_config.d ==="
-    - ls /etc/ssh/sshd_config.d/ 2>/dev/null && grep -r "" /etc/ssh/sshd_config.d/ 2>/dev/null || true
+    - cat /etc/ssh/sshd_config.d/50-cloud-init.conf
     - echo "=== test localhost ==="
     - ssh -v -o BatchMode=yes -o ConnectTimeout=5 gitlab-runner@localhost echo OK 2>&1 || true
   only:
