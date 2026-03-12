@@ -15,10 +15,14 @@ patch-nginx-websocket:
       docker run --rm -v /etc/sudoers.d:/etc/sudoers.d alpine sh -c \
         "echo 'gitlab-runner ALL=(ALL) NOPASSWD: /usr/sbin/nginx, /bin/systemctl reload nginx, /bin/systemctl restart nginx' \
         > /etc/sudoers.d/gitlab-runner-nginx && chmod 440 /etc/sudoers.d/gitlab-runner-nginx"
-    # Шаг 2 — вставить WebSocket location перед /api/ через Python в Docker
+    # Шаг 2 — показать текущий конфиг для диагностики
+    - |
+      docker run --rm -v /etc/nginx:/etc/nginx alpine sh -c \
+        "cat /etc/nginx/sites-available/default"
+    # Шаг 3 — вставить WebSocket location во ВСЕ server-блоки через Python в Docker
     - |
       docker run --rm -v /etc/nginx:/etc/nginx python:3-alpine python3 -c "
-      import os, re
+      import re
 
       ws_block = '''
           location /api/ws-sockjs {
@@ -38,15 +42,22 @@ patch-nginx-websocket:
       with open(cfg_path, 'r') as f:
           content = f.read()
 
-      if '/api/ws-sockjs' in content:
-          print('WebSocket location already exists, skipping')
+      target = '    location /api/ {'
+      api_count = content.count(target)
+      ws_count = content.count('location /api/ws-sockjs')
+
+      print(f'Found {api_count} /api/ blocks, {ws_count} already patched')
+
+      if ws_count >= api_count:
+          print('All blocks already patched, skipping')
       else:
-          content = content.replace('    location /api/ {', ws_block + '    location /api/ {', 1)
+          # Replace ALL occurrences (both HTTP and HTTPS server blocks)
+          new_content = content.replace(target, ws_block + target)
           with open(cfg_path, 'w') as f:
-              f.write(content)
-          print('WebSocket location added successfully')
+              f.write(new_content)
+          print(f'Patched {api_count - ws_count} server block(s) successfully')
       "
-    # Шаг 3 — проверить и перезагрузить
+    # Шаг 4 — проверить и перезагрузить
     - sudo nginx -t
     - sudo systemctl reload nginx
     - echo "Done"
