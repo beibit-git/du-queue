@@ -34,7 +34,12 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
+        // Прямой доступ (dev) и через Nginx когда Nginx стрипает /api/ (prod)
         registry.addEndpoint("/ws")
+                .setAllowedOriginPatterns("*");
+
+        // Через Nginx когда Nginx НЕ стрипает /api/ (proxy_pass без пути)
+        registry.addEndpoint("/api/ws")
                 .setAllowedOriginPatterns("*");
 
         registry.addEndpoint("/ws-sockjs")

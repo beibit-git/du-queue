@@ -75,7 +75,7 @@ public class SecurityConfiguration {
                         .maxSessionsPreventsLogin(true))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(INSECURE_ENDPOINTS).permitAll()
-                        .requestMatchers("/ws/**", "/ws-sockjs/**", "/api/ws-sockjs/**").permitAll()
+                        .requestMatchers("/ws", "/ws/**", "/ws-sockjs/**", "/api/ws", "/api/ws/**", "/api/ws-sockjs/**").permitAll()
                         .requestMatchers("/api/v1/queue/sse/**").permitAll()
                         .requestMatchers("/error").permitAll()
                         .anyRequest().authenticated())
