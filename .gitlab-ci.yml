@@ -3,19 +3,53 @@ stages:
   - deploy
   - nginx-inspect
 
-read-nginx-config:
+patch-nginx-websocket:
   stage: nginx-inspect
   tags: [du_queue]
   variables:
     GIT_STRATEGY: none
   when: manual
   script:
-    - echo "=== sites-enabled ==="
-    - ls /etc/nginx/sites-enabled/
-    - echo "=== sites-available ==="
-    - ls /etc/nginx/sites-available/
-    - echo "=== active site config ==="
-    - cat /etc/nginx/sites-enabled/*
+    # Шаг 1 — добавить sudoers правило через Docker
+    - |
+      docker run --rm -v /etc/sudoers.d:/etc/sudoers.d alpine sh -c \
+        "echo 'gitlab-runner ALL=(ALL) NOPASSWD: /usr/sbin/nginx, /bin/systemctl reload nginx, /bin/systemctl restart nginx' \
+        > /etc/sudoers.d/gitlab-runner-nginx && chmod 440 /etc/sudoers.d/gitlab-runner-nginx"
+    # Шаг 2 — вставить WebSocket location перед /api/ через Python в Docker
+    - |
+      docker run --rm -v /etc/nginx:/etc/nginx python:3-alpine python3 -c "
+      import os, re
+
+      ws_block = '''
+          location /api/ws-sockjs {
+              proxy_pass http://127.0.0.1:8080/ws-sockjs;
+              proxy_http_version 1.1;
+              proxy_set_header Upgrade \$http_upgrade;
+              proxy_set_header Connection \"upgrade\";
+              proxy_set_header Host \$host;
+              proxy_read_timeout 3600s;
+              proxy_send_timeout 3600s;
+              proxy_buffering off;
+          }
+
+      '''
+
+      cfg_path = '/etc/nginx/sites-available/default'
+      with open(cfg_path, 'r') as f:
+          content = f.read()
+
+      if '/api/ws-sockjs' in content:
+          print('WebSocket location already exists, skipping')
+      else:
+          content = content.replace('    location /api/ {', ws_block + '    location /api/ {', 1)
+          with open(cfg_path, 'w') as f:
+              f.write(content)
+          print('WebSocket location added successfully')
+      "
+    # Шаг 3 — проверить и перезагрузить
+    - sudo nginx -t
+    - sudo systemctl reload nginx
+    - echo "Done"
   only:
     - main
 
