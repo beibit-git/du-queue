@@ -15,14 +15,25 @@ patch-nginx-websocket:
       docker run --rm -v /etc/sudoers.d:/etc/sudoers.d alpine sh -c \
         "echo 'gitlab-runner ALL=(ALL) NOPASSWD: /usr/sbin/nginx, /bin/systemctl reload nginx, /bin/systemctl restart nginx' \
         > /etc/sudoers.d/gitlab-runner-nginx && chmod 440 /etc/sudoers.d/gitlab-runner-nginx"
-    # Шаг 2 — показать текущий конфиг для диагностики
+    # Шаг 2 — показать текущий конфиг ДО патча
+    - echo "=== NGINX CONFIG BEFORE PATCH ==="
     - |
       docker run --rm -v /etc/nginx:/etc/nginx alpine sh -c \
         "cat /etc/nginx/sites-available/default"
-    # Шаг 3 — вставить WebSocket location во ВСЕ server-блоки через Python в Docker
+    # Шаг 3 — идемпотентный патч: удалить старые ws-sockjs блоки, добавить в ВСЕ server-блоки
     - |
       docker run --rm -v /etc/nginx:/etc/nginx python:3-alpine python3 -c "
       import re
+
+      cfg_path = '/etc/nginx/sites-available/default'
+      with open(cfg_path, 'r') as f:
+          content = f.read()
+
+      # Удаляем все существующие ws-sockjs блоки (идемпотентность)
+      before_count = content.count('location /api/ws-sockjs')
+      content = re.sub(r'\n[ \t]*location /api/ws-sockjs\b[^{]*\{[^}]*\}\n', '\n', content)
+      after_remove = content.count('location /api/ws-sockjs')
+      print(f'Removed {before_count - after_remove} existing ws-sockjs block(s)')
 
       ws_block = '''
           location /api/ws-sockjs {
@@ -38,29 +49,25 @@ patch-nginx-websocket:
 
       '''
 
-      cfg_path = '/etc/nginx/sites-available/default'
-      with open(cfg_path, 'r') as f:
-          content = f.read()
-
       target = '    location /api/ {'
       api_count = content.count(target)
-      ws_count = content.count('location /api/ws-sockjs')
-
-      print(f'Found {api_count} /api/ blocks, {ws_count} already patched')
-
-      if ws_count >= api_count:
-          print('All blocks already patched, skipping')
+      if api_count == 0:
+          print('ERROR: Could not find \"location /api/ {\" — check nginx config indentation!')
       else:
-          # Replace ALL occurrences (both HTTP and HTTPS server blocks)
           new_content = content.replace(target, ws_block + target)
           with open(cfg_path, 'w') as f:
               f.write(new_content)
-          print(f'Patched {api_count - ws_count} server block(s) successfully')
+          print(f'Added ws-sockjs to {api_count} server block(s)')
       "
-    # Шаг 4 — проверить и перезагрузить
+    # Шаг 4 — показать конфиг ПОСЛЕ патча для проверки
+    - echo "=== NGINX CONFIG AFTER PATCH ==="
+    - |
+      docker run --rm -v /etc/nginx:/etc/nginx alpine sh -c \
+        "cat /etc/nginx/sites-available/default"
+    # Шаг 5 — проверить и перезагрузить
     - sudo nginx -t
     - sudo systemctl reload nginx
-    - echo "Done"
+    - echo "=== DONE ==="
   only:
     - main
 
