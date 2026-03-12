@@ -10,9 +10,9 @@ import kz.dulaty.queue.feature.ticket.data.mapper.TicketMapper;
 import kz.dulaty.queue.feature.department.data.repository.DepartmentRepository;
 import kz.dulaty.queue.feature.ticket.data.repository.TicketRepository;
 import kz.dulaty.queue.feature.ticket.service.TicketGenerationService;
-import kz.dulaty.queue.feature.sse.SseService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
@@ -23,26 +23,23 @@ import java.util.UUID;
 public class TicketGenerationServiceImpl implements TicketGenerationService {
     private final TicketRepository ticketRepository;
     private final DepartmentRepository departmentRepository;
-    private final SseService sseService;
+    private final SimpMessagingTemplate messagingTemplate;
+
+    private static final String QUEUE_EVENTS_TOPIC = "/topic/queue-events";
 
     @Override
     public TicketDto generateTicket(TicketRequestDto request) {
-
         Department department = departmentRepository.findById(request.getDepartmentId())
                 .orElseThrow(() -> new IllegalArgumentException("Department not found"));
 
-        // Если уже есть WAITING талон с этим номером для этого отдела — вернуть существующий
         Ticket existing = ticketRepository.findByPhoneNumberAndDepartmentAndTicketStatus(
-                request.getPhoneNumber(),
-                department,
-                TicketStatus.WAITING);
+                request.getPhoneNumber(), department, TicketStatus.WAITING);
 
         if (existing != null) {
             log.info("Existing WAITING ticket returned for phone: {}", request.getPhoneNumber());
             return TicketMapper.TICKET_MAPPER.toDto(existing);
         }
 
-        // Создать новый талон
         Ticket newTicket = new Ticket();
         newTicket.setPhoneNumber(request.getPhoneNumber());
         newTicket.setDepartment(department);
@@ -52,10 +49,8 @@ public class TicketGenerationServiceImpl implements TicketGenerationService {
         ticketRepository.save(newTicket);
 
         TicketDto dto = TicketMapper.TICKET_MAPPER.toDto(newTicket);
-
-        // Оповестить всех подключённых клиентов о новом талоне в очереди
-        sseService.broadcast(WsEventDto.ticketGenerated(dto));
-        log.debug("SSE TICKET_GENERATED sent for ticket: {}", newTicket.getTicketNumber());
+        messagingTemplate.convertAndSend(QUEUE_EVENTS_TOPIC, WsEventDto.ticketGenerated(dto));
+        log.debug("WS TICKET_GENERATED sent: {}", newTicket.getTicketNumber());
 
         return dto;
     }

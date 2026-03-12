@@ -1,6 +1,23 @@
 stages:
   - cleanup
   - deploy
+  - nginx-inspect
+
+read-nginx-config:
+  stage: nginx-inspect
+  tags: [du_queue]
+  variables:
+    GIT_STRATEGY: none
+  when: manual
+  script:
+    - echo "=== sites-enabled ==="
+    - ls /etc/nginx/sites-enabled/
+    - echo "=== sites-available ==="
+    - ls /etc/nginx/sites-available/
+    - echo "=== active site config ==="
+    - cat /etc/nginx/sites-enabled/*
+  only:
+    - main
 
 cleanup-root-files:
   stage: cleanup
