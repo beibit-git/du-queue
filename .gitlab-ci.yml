@@ -1,83 +1,6 @@
 stages:
   - cleanup
   - deploy
-  - nginx-inspect
-
-patch-nginx-websocket:
-  stage: nginx-inspect
-  tags: [du_queue]
-  variables:
-    GIT_STRATEGY: none
-  when: manual
-  script:
-    # Шаг 1 — добавить sudoers правило через Docker
-    - |
-      docker run --rm -v /etc/sudoers.d:/etc/sudoers.d alpine sh -c \
-        "echo 'gitlab-runner ALL=(ALL) NOPASSWD: /usr/sbin/nginx, /bin/systemctl reload nginx, /bin/systemctl restart nginx' \
-        > /etc/sudoers.d/gitlab-runner-nginx && chmod 440 /etc/sudoers.d/gitlab-runner-nginx"
-    # Шаг 2 — показать текущий конфиг ДО патча
-    - echo "=== NGINX CONFIG BEFORE PATCH ==="
-    - |
-      docker run --rm -v /etc/nginx:/etc/nginx alpine sh -c \
-        "cat /etc/nginx/sites-available/default"
-    # Шаг 3 — идемпотентный патч: удалить старые ws-sockjs блоки, добавить в ВСЕ server-блоки
-    - |
-      docker run --rm -v /etc/nginx:/etc/nginx python:3-alpine python3 -c "
-      import re
-
-      cfg_path = '/etc/nginx/sites-available/default'
-      with open(cfg_path, 'r') as f:
-          content = f.read()
-
-      # Удаляем все существующие ws-блоки (идемпотентность)
-      before_count = len(re.findall(r'location[^{]*?/api/ws\b', content))
-      content = re.sub(r'\n[ \t]*location\s+\^?~?\s*/api/ws\b[^{]*\{[^}]*\}\n', '\n', content)
-      after_remove = len(re.findall(r'location[^{]*?/api/ws\b', content))
-      print(f'Removed {before_count - after_remove} existing ws block(s)')
-
-      # ^~ modifier — приоритет перед regex-локациями (например location ~ ^/api/)
-      # proxy_pass без пути — Nginx передаёт полный URI: /api/ws → Spring Boot
-      ws_block = '''
-          location ^~ /api/ws {
-              proxy_pass http://127.0.0.1:8080;
-              proxy_http_version 1.1;
-              proxy_set_header Upgrade \$http_upgrade;
-              proxy_set_header Connection \"upgrade\";
-              proxy_set_header Host \$host;
-              proxy_read_timeout 3600s;
-              proxy_send_timeout 3600s;
-              proxy_buffering off;
-          }
-
-      '''
-
-      # Находим все location /api/ { с любыми отступами
-      matches = re.findall(r'([ \t]*)location /api/ \{', content)
-      if not matches:
-          print('ERROR: Could not find \"location /api/ {\" in nginx config!')
-          print('Config snippet:')
-          for line in content.splitlines()[:50]:
-              print(repr(line))
-      else:
-          print(f'Found {len(matches)} \"location /api/\" block(s), indentation: {repr(matches[0])}')
-          indent = matches[0]
-          target = indent + 'location /api/ {'
-          new_content = content.replace(target, ws_block + target)
-          with open(cfg_path, 'w') as f:
-              f.write(new_content)
-          print(f'Patched {len(matches)} server block(s) successfully')
-      "
-    # Шаг 4 — показать конфиг ПОСЛЕ патча для проверки
-    - echo "=== NGINX CONFIG AFTER PATCH ==="
-    - |
-      docker run --rm -v /etc/nginx:/etc/nginx alpine sh -c \
-        "cat /etc/nginx/sites-available/default"
-    # Шаг 5 — проверить и перезагрузить
-    - sudo nginx -t
-    - sudo systemctl reload nginx
-    - echo "=== DONE ==="
-  only:
-    - main
 
 cleanup-root-files:
   stage: cleanup
@@ -104,11 +27,10 @@ deploy:
     - ssh-add -l
     - ssh -o StrictHostKeyChecking=yes -T git@gitlab.dulaty.kz || true
   script:
-    - echo "Деплой на сервер..."
+    - echo "=== Деплой приложения ==="
     - cd /home/gitlab-runner/du-queue/
     - git remote -v
     - git pull
-    - echo "Содержимое директории:"
     - ls -ltah /home/gitlab-runner/du-queue/
     - if docker compose ps | grep "Up"; then
       echo "Контейнеры уже запущены. Перезапуск...";
@@ -124,5 +46,52 @@ deploy:
     - docker build -t openjdk .
     - docker run --network="host" --restart=always -d --name openjdk-container openjdk || docker restart openjdk-container
     - docker ps
+
+    - echo "=== Настройка Nginx WebSocket ==="
+    # Шаг 1 — добавить sudoers (через Docker, не нужен sudo)
+    - |
+      docker run --rm -v /etc/sudoers.d:/etc/sudoers.d alpine sh -c \
+        "echo 'gitlab-runner ALL=(ALL) NOPASSWD: /usr/sbin/nginx, /bin/systemctl reload nginx, /bin/systemctl restart nginx' \
+        > /etc/sudoers.d/gitlab-runner-nginx && chmod 440 /etc/sudoers.d/gitlab-runner-nginx"
+    # Шаг 2 — идемпотентный патч Nginx (через Docker, не нужен sudo)
+    - |
+      docker run --rm -v /etc/nginx:/etc/nginx python:3-alpine python3 -c "
+      import re
+
+      cfg_path = '/etc/nginx/sites-available/default'
+      with open(cfg_path, 'r') as f:
+          content = f.read()
+
+      # Удаляем старые ws-блоки (идемпотентность при повторных деплоях)
+      content = re.sub(r'\n[ \t]*location\s+[\^~]*\s*/api/ws\b[^{]*\{[^}]*\}\n', '\n', content)
+
+      ws_block = '''
+          location ^~ /api/ws {
+              proxy_pass http://127.0.0.1:8080;
+              proxy_http_version 1.1;
+              proxy_set_header Upgrade \$http_upgrade;
+              proxy_set_header Connection \"upgrade\";
+              proxy_set_header Host \$host;
+              proxy_read_timeout 3600s;
+              proxy_send_timeout 3600s;
+              proxy_buffering off;
+          }
+
+      '''
+
+      matches = re.findall(r'([ \t]*)location /api/ \{', content)
+      if not matches:
+          print('WARNING: location /api/ not found — printing config for debug:')
+          print(content[:2000])
+      else:
+          indent = matches[0]
+          target = indent + 'location /api/ {'
+          content = content.replace(target, ws_block + target)
+          with open(cfg_path, 'w') as f:
+              f.write(content)
+          print(f'OK: ws location added to {len(matches)} server block(s)')
+      "
+    # Шаг 3 — проверить конфиг и перезагрузить Nginx
+    - sudo nginx -t && sudo systemctl reload nginx && echo "Nginx reload OK" || echo "Nginx reload FAILED"
   only:
     - main
