@@ -41,10 +41,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                 .setAllowedOriginPatterns("*")
                 .withSockJS()
                 .setHeartbeatTime(25000)
-                .setDisconnectDelay(5000)
-                // Только WebSocket транспорт — убирает xhr-polling/iframe fallback
-                // которые не нужны если Nginx правильно настроен
-                .setTransportHandlerOverride(null);
+                .setDisconnectDelay(5000);
     }
 
     @Override
