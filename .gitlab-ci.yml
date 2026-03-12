@@ -30,14 +30,16 @@ patch-nginx-websocket:
           content = f.read()
 
       # Удаляем все существующие ws-sockjs блоки (идемпотентность)
-      before_count = content.count('location /api/ws-sockjs')
-      content = re.sub(r'\n[ \t]*location /api/ws-sockjs\b[^{]*\{[^}]*\}\n', '\n', content)
-      after_remove = content.count('location /api/ws-sockjs')
+      before_count = len(re.findall(r'location[^{]*?/api/ws-sockjs', content))
+      content = re.sub(r'\n[ \t]*location\s+\^?~?\s*/api/ws-sockjs\b[^{]*\{[^}]*\}\n', '\n', content)
+      after_remove = len(re.findall(r'location[^{]*?/api/ws-sockjs', content))
       print(f'Removed {before_count - after_remove} existing ws-sockjs block(s)')
 
+      # ^~ modifier — приоритет перед regex-локациями (например location ~ ^/api/)
+      # proxy_pass без пути — Nginx передаёт полный URI: /api/ws-sockjs/... → Spring Boot
       ws_block = '''
-          location /api/ws-sockjs {
-              proxy_pass http://127.0.0.1:8080/ws-sockjs;
+          location ^~ /api/ws-sockjs {
+              proxy_pass http://127.0.0.1:8080;
               proxy_http_version 1.1;
               proxy_set_header Upgrade \$http_upgrade;
               proxy_set_header Connection \"upgrade\";
@@ -49,15 +51,21 @@ patch-nginx-websocket:
 
       '''
 
-      target = '    location /api/ {'
-      api_count = content.count(target)
-      if api_count == 0:
-          print('ERROR: Could not find \"location /api/ {\" — check nginx config indentation!')
+      # Находим все location /api/ { с любыми отступами
+      matches = re.findall(r'([ \t]*)location /api/ \{', content)
+      if not matches:
+          print('ERROR: Could not find \"location /api/ {\" in nginx config!')
+          print('Config snippet:')
+          for line in content.splitlines()[:50]:
+              print(repr(line))
       else:
+          print(f'Found {len(matches)} \"location /api/\" block(s), indentation: {repr(matches[0])}')
+          indent = matches[0]
+          target = indent + 'location /api/ {'
           new_content = content.replace(target, ws_block + target)
           with open(cfg_path, 'w') as f:
               f.write(new_content)
-          print(f'Added ws-sockjs to {api_count} server block(s)')
+          print(f'Patched {len(matches)} server block(s) successfully')
       "
     # Шаг 4 — показать конфиг ПОСЛЕ патча для проверки
     - echo "=== NGINX CONFIG AFTER PATCH ==="
