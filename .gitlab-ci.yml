@@ -29,16 +29,16 @@ patch-nginx-websocket:
       with open(cfg_path, 'r') as f:
           content = f.read()
 
-      # Удаляем все существующие ws-sockjs блоки (идемпотентность)
-      before_count = len(re.findall(r'location[^{]*?/api/ws-sockjs', content))
-      content = re.sub(r'\n[ \t]*location\s+\^?~?\s*/api/ws-sockjs\b[^{]*\{[^}]*\}\n', '\n', content)
-      after_remove = len(re.findall(r'location[^{]*?/api/ws-sockjs', content))
-      print(f'Removed {before_count - after_remove} existing ws-sockjs block(s)')
+      # Удаляем все существующие ws-блоки (идемпотентность)
+      before_count = len(re.findall(r'location[^{]*?/api/ws\b', content))
+      content = re.sub(r'\n[ \t]*location\s+\^?~?\s*/api/ws\b[^{]*\{[^}]*\}\n', '\n', content)
+      after_remove = len(re.findall(r'location[^{]*?/api/ws\b', content))
+      print(f'Removed {before_count - after_remove} existing ws block(s)')
 
       # ^~ modifier — приоритет перед regex-локациями (например location ~ ^/api/)
-      # proxy_pass без пути — Nginx передаёт полный URI: /api/ws-sockjs/... → Spring Boot
+      # proxy_pass без пути — Nginx передаёт полный URI: /api/ws → Spring Boot
       ws_block = '''
-          location ^~ /api/ws-sockjs {
+          location ^~ /api/ws {
               proxy_pass http://127.0.0.1:8080;
               proxy_http_version 1.1;
               proxy_set_header Upgrade \$http_upgrade;

@@ -37,15 +37,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         registry.addEndpoint("/ws")
                 .setAllowedOriginPatterns("*");
 
-        // Local dev: /ws-sockjs (Spring Boot serves directly)
         registry.addEndpoint("/ws-sockjs")
-                .setAllowedOriginPatterns("*")
-                .withSockJS()
-                .setHeartbeatTime(25000)
-                .setDisconnectDelay(5000);
-
-        // Production: /api/ws-sockjs (Nginx proxies /api/ws-sockjs → Spring Boot keeping full path)
-        registry.addEndpoint("/api/ws-sockjs")
                 .setAllowedOriginPatterns("*")
                 .withSockJS()
                 .setHeartbeatTime(25000)
