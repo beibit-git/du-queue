@@ -48,50 +48,54 @@ deploy:
     - docker ps
 
     - echo "=== Настройка Nginx WebSocket ==="
-    # Шаг 1 — добавить sudoers (через Docker, не нужен sudo)
+    # Шаг 1 — добавить sudo права напрямую в sudoers.d
     - |
+      echo 'gitlab-runner ALL=(ALL) NOPASSWD: /usr/sbin/nginx, /bin/systemctl, /usr/bin/python3, /usr/bin/tee' \
+        | sudo tee /etc/sudoers.d/gitlab-runner-nginx > /dev/null || \
       docker run --rm -v /etc/sudoers.d:/etc/sudoers.d alpine sh -c \
-        "echo 'gitlab-runner ALL=(ALL) NOPASSWD: /usr/sbin/nginx, /bin/systemctl reload nginx, /bin/systemctl restart nginx' \
+        "echo 'gitlab-runner ALL=(ALL) NOPASSWD: /usr/sbin/nginx, /bin/systemctl, /usr/bin/python3, /usr/bin/tee' \
         > /etc/sudoers.d/gitlab-runner-nginx && chmod 440 /etc/sudoers.d/gitlab-runner-nginx"
-    # Шаг 2 — идемпотентный патч Nginx (через Docker, не нужен sudo)
+    # Шаг 2 — записать Python-скрипт патча в /tmp (права не нужны)
     - |
-      docker run --rm -v /etc/nginx:/etc/nginx python:3-alpine python3 -c "
-      import re
+      cat > /tmp/nginx_ws_patch.py << 'PYEOF'
+      import re, sys
+      cfg = '/etc/nginx/sites-available/default'
+      try:
+          with open(cfg) as f:
+              c = f.read()
+      except Exception as e:
+          print(f'ERROR reading {cfg}: {e}')
+          sys.exit(1)
 
-      cfg_path = '/etc/nginx/sites-available/default'
-      with open(cfg_path, 'r') as f:
-          content = f.read()
+      # Удаляем старый ws-блок если есть
+      c = re.sub(r'\n[ \t]*location[\s\^~]+/api/ws\b[^{]*\{[^}]*\}', '', c)
 
-      # Удаляем старые ws-блоки (идемпотентность при повторных деплоях)
-      content = re.sub(r'\n[ \t]*location\s+[\^~]*\s*/api/ws\b[^{]*\{[^}]*\}\n', '\n', content)
-
-      ws_block = '''
+      ws = """
           location ^~ /api/ws {
               proxy_pass http://127.0.0.1:8080;
               proxy_http_version 1.1;
-              proxy_set_header Upgrade \$http_upgrade;
-              proxy_set_header Connection \"upgrade\";
-              proxy_set_header Host \$host;
+              proxy_set_header Upgrade $http_upgrade;
+              proxy_set_header Connection "upgrade";
+              proxy_set_header Host $host;
               proxy_read_timeout 3600s;
               proxy_send_timeout 3600s;
               proxy_buffering off;
           }
 
-      '''
+      """
 
-      matches = re.findall(r'([ \t]*)location /api/ \{', content)
-      if not matches:
-          print('WARNING: location /api/ not found — printing config for debug:')
-          print(content[:2000])
-      else:
-          indent = matches[0]
-          target = indent + 'location /api/ {'
-          content = content.replace(target, ws_block + target)
-          with open(cfg_path, 'w') as f:
-              f.write(content)
-          print(f'OK: ws location added to {len(matches)} server block(s)')
-      "
-    # Шаг 3 — проверить конфиг и перезагрузить Nginx
-    - sudo nginx -t && sudo systemctl reload nginx && echo "Nginx reload OK" || echo "Nginx reload FAILED"
+      m = re.search(r'[ \t]*location /api/ \{', c)
+      if not m:
+          print('WARN: location /api/ not found, printing config:')
+          print(c[:1000])
+          sys.exit(0)
+
+      patched = c.replace(m.group(), ws + m.group())
+      print(patched)
+      PYEOF
+    # Шаг 3 — запустить патч: читает конфиг, выводит изменённый, sudo tee записывает обратно
+    - sudo python3 /tmp/nginx_ws_patch.py | sudo tee /etc/nginx/sites-available/default > /dev/null
+    # Шаг 4 — проверить и перезагрузить nginx
+    - sudo nginx -t && sudo systemctl reload nginx && echo "=== Nginx reload OK ===" || echo "=== Nginx reload FAILED ==="
   only:
     - main
